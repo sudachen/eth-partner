@@ -6,10 +6,7 @@ use rmcp::{
     handler::server::{tool::ToolRouter, wrapper::Parameters},
     model::{CallToolResult, ErrorData},
     model::{ServerCapabilities, ServerInfo},
-    tool,
-    tool_handler,
-    tool_router,
-    ServerHandler,
+    tool, tool_handler, tool_router, ServerHandler,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

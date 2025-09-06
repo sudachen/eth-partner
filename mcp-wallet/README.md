@@ -1,16 +1,16 @@
 # MCP Wallet Server
 
-`mcp-wallet` is a lightweight, command-line Ethereum wallet server that communicates over a simple, JSON-based Message-Oriented Communication Protocol (MCP) via stdio. It provides essential wallet functionalities, including account creation, transaction creation, and signing, all managed through a human-readable JSON file.
+`mcp-wallet` is a lightweight, command-line Ethereum wallet server that is compliant with the **Rust Message-Oriented Communication Protocol (rmcp)**. It provides essential wallet functionalities, including account creation, transaction creation, and signing, all managed through a human-readable JSON file.
 
-This server is designed to be a component in a larger system, where other tools can interact with it programmatically to manage Ethereum wallets without needing direct access to private keys.
+This server is designed to be a component in a larger system, where other tools or AI agents can interact with it programmatically to manage Ethereum wallets without needing direct access to private keys.
 
 ## Features
 
-- **Account Management**: Generate new Ethereum accounts and import existing ones from private keys.
+- **`rmcp` Compliant**: Interacts via a standardized, robust stdio protocol.
+- **Account Management**: Generate new Ethereum accounts.
 - **Alias System**: Assign human-readable aliases to addresses for easier reference.
 - **EIP-1559 Transactions**: Create and sign modern, EIP-1559 compliant transactions.
 - **JSON-Based Storage**: Wallet data is stored in a simple, human-readable JSON file (`~/.mcp-wallet.json` by default).
-- **MCP Interface**: Interact with the wallet server via a simple stdio-based JSON protocol.
 
 ## Installation
 
@@ -34,144 +34,115 @@ To run the wallet server, simply execute the compiled binary:
 cargo run
 ```
 
-The server will start and listen for JSON commands on standard input. It will print JSON responses to standard output.
+The server will start and listen for `rmcp` messages on standard input and send responses to standard output.
 
 ### Wallet File
 
-By default, the wallet data is stored in `~/.mcp-wallet.json`. If the file does not exist, a new one will be created automatically upon the first run.
+By default, the wallet data is stored in `~/.mcp-wallet.json`. If the file does not exist, a new one will be created automatically when the server first needs to save data.
 
-## Integration with AI Agentic Systems
+## Interacting with the Server
 
-The `mcp-wallet` server is designed to be used as a tool by AI agentic systems (like Google's Gemini, Anthropic's Claude, or others with MCP support) that can execute shell commands and interact with subprocesses. By running the wallet as a persistent stdio server, an AI agent can manage a user's wallet without ever having direct access to the private keys.
+The server communicates using the `rmcp` protocol. A client can interact with it by sending `rmcp` request messages and receiving response messages over stdio. The `rmcp` crate provides both server and client implementations.
 
-### How it Works
+## Tool Reference
 
-1.  **Tool Definition**: The AI agent's system administrator defines a new tool that knows how to start and communicate with the `mcp-wallet` server.
-2.  **Start the Server**: When the agent needs to perform a wallet operation, it starts the `mcp-wallet` binary as a background process.
-3.  **Send Commands**: The agent sends JSON-formatted commands (as defined in the MCP Command Reference below) to the server's standard input (`stdin`).
-4.  **Receive Responses**: The agent listens to the server's standard output (`stdout`) to receive JSON-formatted responses.
+The server exposes the following tools that can be called by an `rmcp` client.
 
-### Example Tool Configuration (Conceptual)
+### `new_account`
 
-Here is a conceptual example of how you might define a tool for an AI agent:
+**Description**: Creates a new Ethereum account.
 
-**Tool Name**: `eth_wallet`
+**Parameters**:
+- `alias` (optional, string): A human-readable alias to assign to the new account.
 
-**Invocation**:
-The tool would start the server and keep the process handle to interact with its `stdin` and `stdout`.
-
-```python
-# Conceptual Python code for an agent's tool
-import subprocess
-import json
-
-class EthWalletTool:
-    def __init__(self, wallet_path='target/release/mcp-wallet'):
-        self.process = subprocess.Popen(
-            [wallet_path],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-    def execute_command(self, command, params):
-        request = json.dumps({'command': command, 'params': params})
-        self.process.stdin.write(request + '\n')
-        self.process.stdin.flush()
-        
-        response_line = self.process.stdout.readline()
-        return json.loads(response_line)
-
-    def close(self):
-        self.process.terminate()
-
-# Usage by the agent
-wallet_tool = EthWalletTool()
-response = wallet_tool.execute_command('list-accounts', {})
-print(response)
-wallet_tool.close()
+**Example Request**:
+```json
+{"id":1,"method":"call_tool","params":{"name":"new_account","arguments":{"alias":"main_account"}}}
 ```
 
-This setup allows an AI agent to securely manage an Ethereum wallet by delegating all cryptographic operations to the `mcp-wallet` server, which acts as a trusted execution environment.
-
-## MCP Command Reference
-
-All commands and responses are single-line JSON objects.
-
-### `new-account`
-
-Generates a new Ethereum account and optionally assigns an alias.
-
-**Request:**
+**Example Response**:
 ```json
-{"command":"new-account","params":{"alias":"main_account"}}
+{"id":1,"result":{"type":"structured","content":{"address":"0x..."}}}
 ```
 
-**Success Response:**
+---
+
+### `list_accounts`
+
+**Description**: Lists all Ethereum accounts in the wallet.
+
+**Parameters**: None
+
+**Example Request**:
 ```json
-{"status":"success","data":{"address":"0x..."}}
+{"id":2,"method":"call_tool","params":{"name":"list_accounts","arguments":{}}}
 ```
 
-### `list-accounts`
-
-Lists all accounts in the wallet, along with their nonces and aliases.
-
-**Request:**
+**Example Response**:
 ```json
-{"command":"list-accounts","params":{}}
+{"id":2,"result":{"type":"structured","content":[{"address":"0x...","aliases":["main_account"],"nonce":0}]}}
 ```
 
-**Success Response:**
+---
+
+### `set_alias`
+
+**Description**: Sets an alias for an Ethereum account.
+
+**Parameters**:
+- `address` (string): The Ethereum address to which the alias will be assigned.
+- `alias` (string): The new alias to assign.
+
+**Example Request**:
 ```json
-{"status":"success","data":[{"address":"0x...","nonce":0,"aliases":["main_account"]}]}
+{"id":3,"method":"call_tool","params":{"name":"set_alias","arguments":{"address":"0x...","alias":"backup_account"}}}
 ```
 
-### `set-alias`
-
-Associates a new alias with an existing address.
-
-**Request:**
+**Example Response**:
 ```json
-{"command":"set-alias","params":{"address":"0x...","alias":"backup_account"}}
+{"id":3,"result":{"type":"structured","content":null}}
 ```
 
-**Success Response:**
+---
+
+### `create_tx`
+
+**Description**: Creates an EIP-1559 transaction request.
+
+**Parameters**:
+- `from` (string): The address or alias of the account that will sign the transaction.
+- `to` (string): The recipient's Ethereum address.
+- `value` (string): The amount of ETH to send, in wei.
+- `chain_id` (integer): The chain ID for the transaction (e.g., `1` for Mainnet).
+- `gas` (optional, integer): The gas limit for the transaction.
+- `max_fee_per_gas` (optional, string): The maximum fee per gas, in wei.
+- `max_priority_fee_per_gas` (optional, string): The maximum priority fee per gas, in wei.
+
+**Example Request**:
 ```json
-{"status":"success","data":null}
+{"id":4,"method":"call_tool","params":{"name":"create_tx","arguments":{"from":"main_account","to":"0x...","value":"1000000000000000000","chain_id":1}}}
 ```
 
-### `create-tx`
-
-Creates an EIP-1559 transaction request. Gas parameters are optional and will use defaults if not provided.
-
-**Request:**
+**Example Response**:
 ```json
-{"command":"create-tx","params":{"from":"main_account","to":"0x...","value":"1000000000000000000","chain_id":1}}
+{"id":4,"result":{"type":"structured","content":{"chain_id":1,"to":"0x...","value":"1000000000000000000",...}}}
 ```
 
-**Success Response:**
+---
+
+### `sign_tx`
+
+**Description**: Signs a transaction with a specified account.
+
+**Parameters**:
+- `from` (string): The address or alias of the account that will sign the transaction.
+- `tx_json` (object): The JSON representation of the transaction request created by `create_tx`.
+
+**Example Request**:
 ```json
-{"status":"success","data":{"chain_id":1,"to":"0x...","value":"1000000000000000000",...}}
+{"id":5,"method":"call_tool","params":{"name":"sign_tx","arguments":{"from":"main_account","tx_json":{"chain_id":1,...}}}}
 ```
 
-### `sign-tx`
-
-Signs a transaction request with a specified account.
-
-**Request:**
+**Example Response**:
 ```json
-{"command":"sign-tx","params":{"from":"main_account","tx_json":{"chain_id":1,...}}}
-```
-
-**Success Response:**
-```json
-{"status":"success","data":{"raw_transaction":"0x...","hash":"0x...",...}}
-```
-
-### Error Response
-
-If a command fails, the server will return an error response:
-
-```json
-{"status":"error","error":"Error message here"}
+{"id":5,"result":{"type":"structured","content":{"hash":"0x...","raw_transaction":"0x...",...}}}

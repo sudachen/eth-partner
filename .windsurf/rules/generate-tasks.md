@@ -56,6 +56,11 @@ The generated task list _must_ follow this structure:
 - [ ] 2.0 Parent Task Title
   - [ ] 2.1 [Sub-task description 2.1]
 - [ ] 3.0 Parent Task Title (may not require sub-tasks if purely structural or configuration)
+
+
+## Associated PRD
+
+Use @<associated prd file>
 ```
 
 ## Interaction Model

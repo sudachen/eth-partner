@@ -72,5 +72,8 @@ You are an expert in Rust, async programming, and concurrent systems.
 
 
 ## Testing
-- Tests must be placed in test directory, do not place tests in the project modules what are tested
-- 
+- Both unit tests and integration tests must be placed in `tests` directory, do not place tests in the project modules what they are testing
+
+## Before git commit
+- Always call `cargo fmt --all` to have commited source code formatted
+- Always call `cargo clippy` to be sure there is no linter issues
