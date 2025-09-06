@@ -73,14 +73,23 @@ pub enum WalletError {
     EthersProviderError(#[from] ProviderError),
 
     /// Error during RPC client initialization.
+    /// 
+    /// This error occurs when there is a problem initializing the RPC client, 
+    /// such as a network connection issue or invalid configuration.
     #[error("RPC client initialization error: {0}")]
     RpcClientInitialization(String),
 
     /// Error when a transaction is not found by its hash.
+    /// 
+    /// This error occurs when a transaction is not found in the wallet's 
+    /// transaction history or on the blockchain.
     #[error("Transaction not found for hash: {0}")]
     TransactionNotFound(H256),
 
     /// Error during ETH value conversion.
+    /// 
+    /// This error occurs when there is a problem converting between different 
+    /// ETH value formats, such as Wei to Ether.
     #[error("Value conversion error: {0}")]
     ConversionError(#[from] self::utils::ConversionError),
 }

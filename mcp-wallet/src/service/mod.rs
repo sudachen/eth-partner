@@ -17,54 +17,81 @@ use tokio::sync::Mutex;
 
 // --- Tool Parameter Structs ---
 
+/// Parameters for the `new_account` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct NewAccountParams {
+    /// An optional alias for the new account.
     alias: Option<String>,
 }
 
+/// Parameters for the `set_alias` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct SetAliasParams {
+    /// The Ethereum address to set an alias for.
     address: String,
+    /// The alias to set for the address.
     alias: String,
 }
 
+/// Parameters for the `create_tx` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct CreateTxParams {
+    /// The identifier (address or alias) of the account to send from.
     from: String,
+    /// The recipient's Ethereum address.
     to: String,
+    /// The amount of ETH to send.
     value: String,
+    /// The chain ID for the transaction.
     chain_id: u64,
+    /// The gas limit for the transaction.
     gas: Option<u64>,
+    /// The maximum fee per gas for the transaction.
     max_fee_per_gas: Option<String>,
+    /// The maximum priority fee per gas for the transaction.
     max_priority_fee_per_gas: Option<String>,
 }
 
+/// Parameters for the `sign_tx` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct SignTxParams {
+    /// The identifier (address or alias) of the account to sign with.
     from: String,
+    /// The transaction to sign.
     tx_json: Value,
 }
 
+/// Parameters for the `eth_getBalance` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct GetBalanceParams {
+    /// The Ethereum address to query.
     address: String,
 }
 
+/// Parameters for the `eth_sendSignedTransaction` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct SendSignedTxParams {
+    /// The raw, signed transaction as a hex-encoded string.
     signed_transaction_hex: String,
 }
 
+/// Parameters for the `eth_getTransactionInfo` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct GetTxInfoParams {
+    /// The transaction hash as a hex-encoded string.
     transaction_hash: String,
 }
 
+/// Parameters for the `eth_transferEth` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct TransferEthParams {
+    /// The identifier (address or alias) of the account to send from.
     from: String,
+    /// The recipient's Ethereum address.
     to: String,
+    /// The amount of ETH to send.
     value_eth: f64,
+    /// The chain ID for the transaction.
     chain_id: u64,
 }
 
@@ -88,6 +115,7 @@ impl WalletHandler {
         }
     }
 
+    /// Creates a new Ethereum account.
     #[tool(description = "Creates a new Ethereum account.")]
     async fn new_account(
         &self,
@@ -101,6 +129,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Lists all Ethereum accounts in the wallet.
     #[tool(description = "Lists all Ethereum accounts in the wallet.")]
     async fn list_accounts(&self) -> Result<CallToolResult, ErrorData> {
         let wallet = self.wallet.lock().await;
@@ -115,6 +144,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Sets an alias for an Ethereum account.
     #[tool(description = "Sets an alias for an Ethereum account.")]
     async fn set_alias(
         &self,
@@ -130,6 +160,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Creates an EIP-1559 transaction request.
     #[tool(description = "Creates an EIP-1559 transaction request.")]
     async fn create_tx(
         &self,
@@ -174,6 +205,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Signs a transaction with a specified account.
     #[tool(description = "Signs a transaction with a specified account.")]
     async fn sign_tx(&self, params: Parameters<SignTxParams>) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
@@ -188,6 +220,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Gets the current block number of the Ethereum network.
     #[tool(description = "Gets the current block number of the Ethereum network.")]
     async fn eth_get_current_block(&self) -> Result<CallToolResult, ErrorData> {
         let block_number = self
@@ -199,6 +232,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Gets the ETH balance for a given address.
     #[tool(description = "Gets the ETH balance for a given address.")]
     async fn eth_get_balance(
         &self,
@@ -213,6 +247,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Sends a signed transaction to the network.
     #[tool(description = "Sends a signed transaction to the network.")]
     async fn eth_send_signed_transaction(
         &self,
@@ -227,6 +262,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Gets information about a transaction by its hash.
     #[tool(description = "Gets information about a transaction by its hash.")]
     async fn eth_get_transaction_info(
         &self,
@@ -247,6 +283,7 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
+    /// Creates, signs, and sends an ETH transfer transaction.
     #[tool(description = "Creates, signs, and sends an ETH transfer transaction.")]
     async fn eth_transfer_eth(
         &self,

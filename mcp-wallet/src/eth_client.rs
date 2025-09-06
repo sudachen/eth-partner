@@ -11,6 +11,9 @@ use ethers::{
 use std::str::FromStr;
 
 /// A client for interacting with an Ethereum RPC endpoint.
+///
+/// This client provides methods for querying the Ethereum network and sending
+/// transactions.
 #[derive(Debug)]
 pub struct EthClient {
     /// The Ethers provider for making RPC calls.
@@ -28,6 +31,12 @@ impl EthClient {
     ///
     /// A `Result` containing the new `EthClient` or a `WalletError` if the
     /// client could not be created.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let client = EthClient::new("https://mainnet.infura.io/v3/YOUR_PROJECT_ID")?;
+    /// ```
     pub fn new(rpc_url: &str) -> Result<Self> {
         let http_provider = Http::from_str(rpc_url)
             .map_err(|e| WalletError::RpcClientInitialization(e.to_string()))?;
@@ -40,6 +49,12 @@ impl EthClient {
     /// # Returns
     ///
     /// A `Result` containing the current block number (`u64`) or a `WalletError`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let block_number = client.get_current_block().await?;
+    /// ```
     pub async fn get_current_block(&self) -> Result<u64> {
         let block_number = self.provider.get_block_number().await?;
         Ok(block_number.as_u64())
@@ -54,6 +69,12 @@ impl EthClient {
     /// # Returns
     ///
     /// A `Result` containing the balance in Ether (as a `String`) or a `WalletError`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let balance = client.get_balance("0x742d35Cc6634C0532925a3b844Bc454e4438f44e").await?;
+    /// ```
     pub async fn get_balance(&self, address: &str) -> Result<String> {
         let addr = Address::from_str(address)
             .map_err(|e| WalletError::InvalidPrivateKey(e.to_string()))?;
@@ -70,6 +91,12 @@ impl EthClient {
     /// # Returns
     ///
     /// A `Result` containing the transaction hash (`H256`) or a `WalletError`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let tx_hash = client.send_signed_transaction("0xf86...").await?;
+    /// ```
     pub async fn send_signed_transaction(&self, signed_tx_hex: &str) -> Result<H256> {
         let tx_bytes = hex::decode(signed_tx_hex.strip_prefix("0x").unwrap_or(signed_tx_hex))?;
         let tx_bytes = Bytes::from(tx_bytes);
@@ -88,6 +115,12 @@ impl EthClient {
     ///
     /// A `Result` containing an `Option<Transaction>` or a `WalletError`.
     /// The option will be `None` if the transaction is not found.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let tx_info = client.get_transaction_info(H256::from("0x...")).await?;
+    /// ```
     pub async fn get_transaction_info(&self, tx_hash: H256) -> Result<Option<Transaction>> {
         let tx_info = self.provider.get_transaction(tx_hash).await?;
         Ok(tx_info)

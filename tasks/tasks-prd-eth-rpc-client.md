@@ -54,5 +54,7 @@ This task list is based on the `prd-eth-rpc-client.md` document.
 - [x] **Sub-task 6.1:** Add unit tests for the new functionality.
   - Create a new test file: `mcp-wallet/tests/eth_client_tests.rs`.
   - Add tests for `EthClient` methods (`get_current_block`, `get_balance`, etc.).
-- [ ] **Sub-task 6.2:** Manually test the MCP tools against a local testnet (e.g., Anvil).
+- [x] **Sub-task 6.2:** Manually test the MCP tools against a local testnet (e.g., Anvil).
 - [ ] **Sub-task 6.3:** Update `README.md` to document the new Ethereum tools and the `--rpc-url` argument.
+
+### Task 7: Final Review and Cleanup
