@@ -24,11 +24,11 @@ jobs:
       run: |
         curl -L https://foundry.paradigm.xyz | bash
         echo "$HOME/.config/.foundry/bin" >> $GITHUB_PATH
-        source /home/runner/.bashrc
+        source ~/.bashrc
         cat ~/.bashrc
         env
-        ls ~/.config/.foundry/bin
-        ~/.config/.foundry/bin/foundryup
+        ls $HOME/.config/.foundry/bin
+        $HOME/.config/.foundry/bin/foundryup
 
     - name: Check Formatting
       run: cargo fmt -- --check
