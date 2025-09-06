@@ -8,11 +8,13 @@
 
 /// Defines error types and a custom `Result` type for the wallet.
 pub mod error;
+pub mod eth_client;
 pub mod models;
 /// The MCP service implementation.
 pub mod service;
 pub mod transaction;
 pub mod wallet;
+pub mod wallet_storage;
 
 // Re-export commonly used types and traits
 pub use error::{Result, WalletError};
