@@ -1,6 +1,6 @@
 //! The MCP service implementation for the wallet.
 
-use crate::{wallet::Wallet, WalletError};
+use crate::{eth_client::EthClient, wallet::Wallet, WalletError};
 use ethers::types::{Address, U256};
 use rmcp::{
     handler::server::{tool::ToolRouter, wrapper::Parameters},
@@ -50,15 +50,17 @@ struct SignTxParams {
 pub struct WalletHandler {
     tool_router: ToolRouter<Self>,
     wallet: Arc<Mutex<Wallet>>,
+    eth_client: Arc<EthClient>,
 }
 
 #[tool_router]
 #[allow(missing_docs)]
 impl WalletHandler {
     /// Creates a new `WalletHandler`.
-    pub fn new(wallet: Arc<Mutex<Wallet>>) -> Self {
+    pub fn new(wallet: Arc<Mutex<Wallet>>, eth_client: Arc<EthClient>) -> Self {
         Self {
             wallet,
+            eth_client,
             tool_router: Self::tool_router(),
         }
     }

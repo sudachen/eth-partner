@@ -1,10 +1,20 @@
 //! MCP Wallet Server - Main entry point
 
 use anyhow::Result;
-use mcp_wallet::{service::WalletHandler, wallet::Wallet, WalletError};
+use clap::Parser;
+use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet, WalletError};
 use rmcp::ServiceExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
+/// Command-line arguments for the MCP Wallet Server.
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// The URL of the Ethereum RPC endpoint.
+    #[arg(long, default_value = "http://127.0.0.1:8545")]
+    rpc_url: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -12,6 +22,9 @@ async fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .target(env_logger::Target::Stderr)
         .init();
+
+    // Parse command-line arguments
+    let args = Args::parse();
 
     // Determine wallet file path
     let wallet_path = dirs::home_dir()
@@ -46,8 +59,11 @@ async fn main() -> Result<()> {
     // Wrap the wallet in an Arc<Mutex<>> to allow shared access
     let wallet = Arc::new(Mutex::new(wallet));
 
+    // Create the Ethereum RPC client
+    let eth_client = Arc::new(EthClient::new(&args.rpc_url)?);
+
     // Create the wallet service handler
-    let handler = WalletHandler::new(wallet.clone());
+    let handler = WalletHandler::new(wallet.clone(), eth_client.clone());
 
     // Create the stdio transport
     let transport = (tokio::io::stdin(), tokio::io::stdout());

@@ -1,4 +1,5 @@
 use ethers::core::types::SignatureError;
+use ethers::providers::ProviderError;
 use ethers::types::Address;
 use ethers::utils::rlp::DecoderError;
 use thiserror::Error;
@@ -66,6 +67,14 @@ pub enum WalletError {
     /// Error from signature operations.
     #[error("Signature error: {0}")]
     SignatureError(#[from] SignatureError),
+
+    /// Error from the ethers-rs provider.
+    #[error("Ethers provider error: {0}")]
+    EthersProviderError(#[from] ProviderError),
+
+    /// Error during RPC client initialization.
+    #[error("RPC client initialization error: {0}")]
+    RpcClientInitialization(String),
 }
 
 /// Result type for wallet operations.

@@ -1,6 +1,6 @@
 //! Integration tests for the fully compliant MCP Wallet Server.
 
-use mcp_wallet::{service::WalletHandler, wallet::Wallet};
+use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet};
 use rmcp::{model::CallToolRequestParam, serve_client, service::ServiceExt};
 use serde_json::{json, Map, Value};
 use std::sync::Arc;
@@ -13,11 +13,13 @@ async fn test_mcp_client_workflow() {
 
     // Create a new wallet and handler
     let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
 
     // Spawn the server to run in the background
     let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
     tokio::spawn(async move {
-        let server = WalletHandler::new(server_wallet)
+        let server = WalletHandler::new(server_wallet, server_eth_client)
             .serve(server_stream)
             .await
             .unwrap();

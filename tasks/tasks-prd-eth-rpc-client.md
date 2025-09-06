@@ -20,10 +20,10 @@ This task list is based on the `prd-eth-rpc-client.md` document.
 
 ### Task 2: Implement RPC Client & Basic Tools
 
-- [ ] **Sub-task 2.1:** Implement the basic structure of the `EthClient` in `eth_client.rs`, including a constructor that takes an RPC URL.
-- [ ] **Sub-task 2.2:** Add a `get_current_block` method to `EthClient`.
-- [ ] **Sub-task 2.3:** Add a `get_balance` method to `EthClient`.
-- [ ] **Sub-task 2.4:** Update `main.rs` to accept an optional `--rpc-url` command-line argument, using `http://127.0.0.1:8545` as the default.
+- [x] **Sub-task 2.1:** Implement the basic structure of the `EthClient` in `eth_client.rs`, including a constructor that takes an RPC URL.
+- [x] **Sub-task 2.2:** Add a `get_current_block` method to `EthClient`.
+- [x] **Sub-task 2.3:** Add a `get_balance` method to `EthClient`.
+- [x] **Sub-task 2.4:** Update `main.rs` to accept an optional `--rpc-url` command-line argument, using `http://127.0.0.1:8545` as the default.
 
 ### Task 3: Implement Wallet Storage
 
