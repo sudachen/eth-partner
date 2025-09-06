@@ -34,13 +34,10 @@ This document outlines key insights and best practices for using the `rmcp` crat
   #[tool_router]
   impl MyHandler {
       pub fn new(/*...initial state...*/) -> Self {
-          let mut this = Self {
-              tool_router: ToolRouter::new(), // Temporary dummy router
+          Self {
+              tool_router: Self::tool_router() // auto build router
               // ... initialize other state
-          };
-          // Call the macro-generated static method
-          this.tool_router = Self::tool_router(this.clone()); 
-          this
+          }
       }
 
       #[tool]
@@ -56,7 +53,8 @@ This document outlines key insights and best practices for using the `rmcp` crat
   // In main.rs or where the server is set up:
   let handler = MyHandler::new();
   // The `ServiceExt` trait provides the `serve` method.
-  handler.serve(transport).await?;
+  let service = handler.serve(transport).await?;
+  service.wait().await?;
   ```
 
 ## 4. Tool Parameters
