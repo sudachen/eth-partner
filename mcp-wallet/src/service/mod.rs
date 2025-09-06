@@ -1,7 +1,7 @@
 //! The MCP service implementation for the wallet.
 
 use crate::{eth_client::EthClient, wallet::Wallet, WalletError};
-use ethers::types::{Address, U256};
+use ethers::types::{Address, H256, U256};
 use rmcp::{
     handler::server::{tool::ToolRouter, wrapper::Parameters},
     model::{CallToolResult, ErrorData},
@@ -43,6 +43,29 @@ struct CreateTxParams {
 struct SignTxParams {
     from: String,
     tx_json: Value,
+}
+
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct GetBalanceParams {
+    address: String,
+}
+
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct SendSignedTxParams {
+    signed_transaction_hex: String,
+}
+
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct GetTxInfoParams {
+    transaction_hash: String,
+}
+
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct TransferEthParams {
+    from: String,
+    to: String,
+    value_eth: f64,
+    chain_id: u64,
 }
 
 /// The service handler for the wallet.
@@ -164,6 +187,108 @@ impl WalletHandler {
             .map_err(to_internal_error)?;
         Ok(CallToolResult::structured(result))
     }
+
+    #[tool(description = "Gets the current block number of the Ethereum network.")]
+    async fn eth_get_current_block(&self) -> Result<CallToolResult, ErrorData> {
+        let block_number = self
+            .eth_client
+            .get_current_block()
+            .await
+            .map_err(to_internal_error)?;
+        let result = json!({ "block_number": block_number });
+        Ok(CallToolResult::structured(result))
+    }
+
+    #[tool(description = "Gets the ETH balance for a given address.")]
+    async fn eth_get_balance(
+        &self,
+        params: Parameters<GetBalanceParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let balance = self
+            .eth_client
+            .get_balance(&params.0.address)
+            .await
+            .map_err(to_internal_error)?;
+        let result = json!({ "balance_eth": balance });
+        Ok(CallToolResult::structured(result))
+    }
+
+    #[tool(description = "Sends a signed transaction to the network.")]
+    async fn eth_send_signed_transaction(
+        &self,
+        params: Parameters<SendSignedTxParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let tx_hash = self
+            .eth_client
+            .send_signed_transaction(&params.0.signed_transaction_hex)
+            .await
+            .map_err(to_internal_error)?;
+        let result = json!({ "transaction_hash": format!("0x{:x}", tx_hash) });
+        Ok(CallToolResult::structured(result))
+    }
+
+    #[tool(description = "Gets information about a transaction by its hash.")]
+    async fn eth_get_transaction_info(
+        &self,
+        params: Parameters<GetTxInfoParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let tx_hash = H256::from_str(
+            params.0.transaction_hash.strip_prefix("0x").unwrap_or(&params.0.transaction_hash),
+        )
+        .map_err(|e| to_invalid_params_error(e.to_string()))?;
+
+        let tx_info = self
+            .eth_client
+            .get_transaction_info(tx_hash)
+            .await
+            .map_err(to_internal_error)?;
+
+        let result = serde_json::to_value(tx_info).map_err(|e| to_internal_error(e.to_string()))?;
+        Ok(CallToolResult::structured(result))
+    }
+
+    #[tool(description = "Creates, signs, and sends an ETH transfer transaction.")]
+    async fn eth_transfer_eth(
+        &self,
+        params: Parameters<TransferEthParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let mut wallet = self.wallet.lock().await;
+
+        let to_address = Address::from_str(&params.0.to)
+            .map_err(|_| to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to)))?;
+        let value_wei = ethers::utils::parse_ether(params.0.value_eth)
+            .map_err(|e| to_invalid_params_error(e.to_string()))?;
+
+        // Create the transaction request
+        let (from_account, _) = wallet
+            .get_account(&params.0.from)
+            .ok_or_else(|| to_internal_error(WalletError::SignerNotFound(params.0.from.clone())))?;
+
+        let tx_request = crate::models::Eip1559TransactionRequest {
+            to: Some(to_address),
+            value: value_wei,
+            chain_id: params.0.chain_id,
+            nonce: from_account.nonce.into(),
+            ..Default::default()
+        };
+
+        // Sign the transaction
+        let signed_tx = wallet
+            .sign_transaction(&tx_request, &params.0.from)
+            .await
+            .map_err(to_internal_error)?;
+
+        // Send the transaction
+        let raw_tx_hex = format!("0x{}", hex::encode(signed_tx.raw_transaction));
+        let tx_hash = self
+            .eth_client
+            .send_signed_transaction(&raw_tx_hex)
+            .await
+            .map_err(to_internal_error)?;
+
+        let result = json!({ "transaction_hash": format!("0x{:x}", tx_hash) });
+        Ok(CallToolResult::structured(result))
+    }
 }
 
 #[tool_handler]
@@ -209,6 +334,6 @@ fn to_internal_error<E: std::fmt::Display>(e: E) -> ErrorData {
     ErrorData::internal_error(e.to_string(), None)
 }
 
-fn to_invalid_params_error(e: serde_json::Error) -> ErrorData {
+fn to_invalid_params_error<E: std::fmt::Display>(e: E) -> ErrorData {
     ErrorData::invalid_params(e.to_string(), None)
 }

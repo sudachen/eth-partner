@@ -42,12 +42,12 @@ This task list is based on the `prd-eth-rpc-client.md` document.
 
 ### Task 5: Integrate into MCP Service
 
-- [ ] **Sub-task 5.1:** In `mcp-wallet/src/service/mod.rs`, integrate the `EthClient`.
-- [ ] **Sub-task 5.2:** Expose the `eth_getCurrentBlock` functionality as an MCP tool.
-- [ ] **Sub-task 5.3:** Expose the `eth_getBalance` functionality as an MCP tool.
-- [ ] **Sub-task 5.4:** Expose the `eth_sendSignedTransaction` functionality as an MCP tool.
-- [ ] **Sub-task 5.5:** Expose the `eth_getTransactionInfo` functionality as an MCP tool.
-- [ ] **Sub-task 5.6:** Expose the `eth_transferEth` functionality as an MCP tool.
+- [x] **Sub-task 5.1:** In `mcp-wallet/src/service/mod.rs`, integrate the `EthClient`.
+- [x] **Sub-task 5.2:** Expose the `eth_getCurrentBlock` functionality as an MCP tool.
+- [x] **Sub-task 5.3:** Expose the `eth_getBalance` functionality as an MCP tool.
+- [x] **Sub-task 5.4:** Expose the `eth_sendSignedTransaction` functionality as an MCP tool.
+- [x] **Sub-task 5.5:** Expose the `eth_getTransactionInfo` functionality as an MCP tool.
+- [x] **Sub-task 5.6:** Expose the `eth_transferEth` functionality as an MCP tool.
 
 ### Task 6: Testing and Finalization
 
