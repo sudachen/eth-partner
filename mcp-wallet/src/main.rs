@@ -2,9 +2,7 @@
 
 use anyhow::Result;
 use clap::Parser;
-use mcp_wallet::{
-    eth_client::EthClient, service::WalletHandler, wallet::Wallet, wallet_storage, WalletError,
-};
+use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet, WalletError};
 use rmcp::ServiceExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -28,12 +26,15 @@ async fn main() -> Result<()> {
     // Parse command-line arguments
     let args = Args::parse();
 
-    // Determine home directory paths
-    let home_dir = dirs::home_dir()
-        .ok_or_else(|| WalletError::WalletError("Could not determine home directory".to_string()))?;
-
-    let wallet_path = home_dir.join(".mcp-wallet.json");
-    let key_path = home_dir.join(".mcp-wallet/key.json");
+    // Determine wallet file path
+    let wallet_path = dirs::home_dir()
+        .map(|mut path| {
+            path.push(".mcp-wallet.json");
+            path
+        })
+        .ok_or_else(|| {
+            WalletError::WalletError("Could not determine home directory".to_string())
+        })?;
 
     // Load or create wallet
     let mut wallet = match std::fs::read_to_string(&wallet_path) {
@@ -53,30 +54,13 @@ async fn main() -> Result<()> {
         }
     };
 
-    // Load the private key if it exists
-    let signer = if key_path.exists() {
-        match wallet_storage::load_key(&key_path) {
-            Ok(signer) => {
-                log::info!("Loaded private key from {}", key_path.display());
-                Some(signer)
-            }
-            Err(e) => {
-                log::warn!("Failed to load private key from {}: {}", key_path.display(), e);
-                None
-            }
-        }
-    } else {
-        log::warn!("Key file not found at {}. Signing will not be possible.", key_path.display());
-        None
-    };
-
     wallet.set_file_path(&wallet_path);
 
     // Wrap the wallet in an Arc<Mutex<>> to allow shared access
     let wallet = Arc::new(Mutex::new(wallet));
 
     // Create the Ethereum RPC client
-    let eth_client = Arc::new(EthClient::new(&args.rpc_url, signer)?);
+    let eth_client = Arc::new(EthClient::new(&args.rpc_url)?);
 
     // Create the wallet service handler
     let handler = WalletHandler::new(wallet.clone(), eth_client.clone());

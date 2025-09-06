@@ -13,7 +13,7 @@ async fn test_mcp_client_workflow() {
 
     // Create a new wallet and handler
     let wallet = Arc::new(Mutex::new(Wallet::new()));
-    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545", None).unwrap());
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
 
     // Spawn the server to run in the background
     let server_wallet = wallet.clone();
