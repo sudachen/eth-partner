@@ -1,12 +1,11 @@
 //! Network-related data structures and functionality
 
-use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
 /// Represents an Ethereum network
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Network {
     /// Ethereum Mainnet

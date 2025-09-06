@@ -241,7 +241,11 @@ impl Wallet {
 
 /// Checks if an alias is valid (1-20 alphanumeric characters).
 fn is_valid_alias(alias: &str) -> bool {
-    !alias.is_empty() && alias.len() <= 20 && alias.chars().all(|c| c.is_ascii_alphanumeric())
+    !alias.is_empty()
+        && alias.len() <= 20
+        && alias
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 #[cfg(test)]

@@ -1,140 +1,126 @@
-//! Integration tests for the MCP Wallet Server.
+//! Integration tests for the fully compliant MCP Wallet Server.
 
-use assert_cmd::prelude::*;
-use serde_json::{json, Value};
-use std::io::{BufRead, BufReader, Write};
-use std::process::{Command, Stdio};
-use tempfile::tempdir;
+use mcp_wallet::{service::WalletHandler, wallet::Wallet};
+use rmcp::{model::{CallToolRequestParam}, serve_client, service::ServiceExt};
+use serde_json::{json, Map, Value};
+use std::sync::Arc;
+use tokio::{io::duplex, sync::Mutex};
 
-#[test]
-fn test_full_workflow() {
-    // Use a temporary directory to isolate the wallet file
-    let temp_dir = tempdir().unwrap();
-    let home_dir = temp_dir.path();
+#[tokio::test]
+async fn test_mcp_client_workflow() {
+    // 1. Setup: Create an in-memory transport and start the server in a background task.
+    let (client_stream, server_stream) = duplex(1024);
 
-    // Set the HOME env var to our temp dir so the wallet is created there
-    let mut cmd = Command::cargo_bin("mcp-wallet").unwrap();
-    let mut child = cmd
-        .env("HOME", home_dir)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .expect("Failed to spawn mcp-wallet process");
+    // Create a new wallet and handler
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
 
-    let mut writer = child.stdin.take().unwrap();
-    let mut reader = BufReader::new(child.stdout.take().unwrap());
-
-    // 1. Create a new account
-    let new_account_cmd = json!({
-        "command": "new-account",
-        "params": { "alias": "testaccount" }
+    // Spawn the server to run in the background
+    let server_wallet = wallet.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet).serve(server_stream).await.unwrap();
+        server.waiting().await.unwrap();
+        eprintln!("mcp server finished")
     });
-    writeln!(writer, "{}", new_account_cmd).unwrap();
-    writer.flush().unwrap();
 
-    let mut line = String::new();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
+    // Create an MCP client connected to the in-memory stream
+    // <DON'T CHANGE THIS LINE> it how client is creating
+    let client = serve_client((),client_stream).await.unwrap();
 
-    assert_eq!(response["status"], "success");
-    let address = response["data"]["address"].as_str().unwrap().to_string();
+    let nfo = client.peer_info();
+    println!("{:?}", nfo);
+
+    // 2. List tools to verify server is running and self-describing
+    let list_tools_result = client
+        .list_tools(None)
+        .await
+        .expect("Failed to list tools");
+    assert!(list_tools_result.tools.len() >= 5);
+    let new_account_tool = list_tools_result
+        .tools
+        .iter()
+        .find(|t| t.name == "new_account")
+        .expect("new-account tool not found");
+    assert_eq!(new_account_tool.name, "new_account");
+
+    // 3. Create a new account
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("testaccount"));
+    let new_account_result = client
+        .call_tool(CallToolRequestParam {
+            name: "new_account".into(),
+            arguments: Some(args),
+        })
+        .await
+        .expect("Failed to call new-account");
+
+    let result_value = new_account_result.structured_content.unwrap();
+    let address = result_value["address"].as_str().unwrap().to_string();
     assert!(address.starts_with("0x"));
 
-    // 2. List accounts to verify creation
-    let list_accounts_cmd = json!({ "command": "list-accounts" });
-    writeln!(writer, "{}", list_accounts_cmd).unwrap();
-    writer.flush().unwrap();
+    // 4. List accounts to verify creation
+    let list_accounts_result = client
+        .call_tool(CallToolRequestParam {
+            name: "list_accounts".into(),
+            arguments: None,
+        })
+        .await
+        .expect("Failed to call list-accounts");
 
-    line.clear();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
+    let accounts_value = list_accounts_result.structured_content.unwrap();
+    let accounts: Vec<Value> = serde_json::from_value(accounts_value).unwrap();
+    assert_eq!(accounts[0]["address"], address);
+    assert_eq!(accounts[0]["aliases"][0], "testaccount");
+    assert_eq!(accounts[0]["nonce"], 0);
 
-    assert_eq!(response["status"], "success");
-    assert_eq!(response["data"][0]["address"], address);
-    assert_eq!(response["data"][0]["aliases"][0], "testaccount");
-    assert_eq!(response["data"][0]["nonce"], 0);
+    // 5. Create a transaction
+    let mut args = Map::new();
+    args.insert("from".to_string(), json!("testaccount"));
+    args.insert(
+        "to".to_string(),
+        json!("0x0000000000000000000000000000000000000000"),
+    );
+    args.insert("value".to_string(), json!("1000"));
+    args.insert("chain_id".to_string(), json!(1));
+    let create_tx_result = client
+        .call_tool(CallToolRequestParam {
+            name: "create_tx".into(),
+            arguments: Some(args),
+        })
+        .await
+        .expect("Failed to call create-tx");
 
-    // 3. Create a transaction
-    let create_tx_cmd = json!({
-        "command": "create-tx",
-        "params": {
-            "from": "testaccount",
-            "to": "0x0000000000000000000000000000000000000000",
-            "value": "1000",
-            "chain_id": 1,
-            "gas": 21000,
-            "max_fee_per_gas": "20000000000",
-            "max_priority_fee_per_gas": "1500000000"
-        }
-    });
-    writeln!(writer, "{}", create_tx_cmd).unwrap();
-    writer.flush().unwrap();
-
-    line.clear();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
-
-    assert_eq!(response["status"], "success");
-    let tx_json = response["data"].clone();
+    let tx_json = create_tx_result.structured_content.unwrap();
     assert_eq!(tx_json["nonce"], "0x0");
 
-    // 4. Sign the transaction
-    let sign_tx_cmd = json!({
-        "command": "sign-tx",
-        "params": {
-            "tx_json": tx_json,
-            "from": "testaccount"
-        }
-    });
-    writeln!(writer, "{}", sign_tx_cmd).unwrap();
-    writer.flush().unwrap();
+    // 6. Sign the transaction
+    let mut args = Map::new();
+    args.insert("from".to_string(), json!("testaccount"));
+    args.insert("tx_json".to_string(), tx_json);
+    let sign_tx_result = client
+        .call_tool(CallToolRequestParam {
+            name: "sign_tx".into(),
+            arguments: Some(args),
+        })
+        .await
+        .expect("Failed to call sign-tx");
 
-    line.clear();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
+    let signed_tx = sign_tx_result.structured_content.unwrap();
+    assert!(signed_tx["raw_transaction"].is_string());
+    assert!(signed_tx["hash"].is_string());
 
-    assert_eq!(response["status"], "success");
-    assert!(response["data"]["raw_transaction"].is_string());
-    assert!(response["data"]["hash"].is_string());
+    // 7. List accounts again to check nonce update
+    let list_accounts_result_after = client
+        .call_tool(CallToolRequestParam {
+            name: "list_accounts".into(),
+            arguments: None,
+        })
+        .await
+        .expect("Failed to call list-accounts again");
 
-    // 5. List accounts again to check nonce update
-    writeln!(writer, "{}", list_accounts_cmd).unwrap();
-    writer.flush().unwrap();
+    let accounts_json_after = list_accounts_result_after.structured_content.unwrap();
+    let accounts_after: Vec<Value> = serde_json::from_value(accounts_json_after).unwrap();
+    assert_eq!(accounts_after[0]["nonce"], 1);
 
-    line.clear();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
-
-    assert_eq!(response["status"], "success");
-    assert_eq!(response["data"][0]["nonce"], 1);
-
-    child.kill().unwrap();
-}
-
-#[test]
-fn test_get_tool_definition_command() {
-    let mut cmd = Command::cargo_bin("mcp-wallet").unwrap();
-    let mut child = cmd
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn mcp-wallet process");
-
-    let mut writer = child.stdin.take().unwrap();
-    let mut reader = BufReader::new(child.stdout.take().unwrap());
-
-    let get_definition_cmd = json!({ "command": "get_tool_definition" });
-    writeln!(writer, "{}", get_definition_cmd).unwrap();
-    writer.flush().unwrap();
-
-    let mut line = String::new();
-    reader.read_line(&mut line).unwrap();
-    let response: Value = serde_json::from_str(&line).unwrap();
-
-    assert_eq!(response["status"], "success");
-    let tool_definition = &response["data"];
-    assert_eq!(tool_definition["tool"]["name"], "eth_wallet_manager");
-
-    child.kill().unwrap();
+    // 8. Shutdown
+    client.cancel().await.unwrap();
 }

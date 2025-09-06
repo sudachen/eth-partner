@@ -62,6 +62,7 @@ You are an expert in Rust, async programming, and concurrent systems.
 - Use `serde` for serialization/deserialization.
 - Use `sqlx` or `tokio-postgres` for async database interactions.
 - Utilize `tonic` for gRPC with async support.
+- Use `async-trait` to work with async traits
 
 ## Docs and References
 - Refer to Rust's async book and `tokio` documentation for in-depth information on async patterns, best practices, and advanced features.
@@ -72,6 +73,3 @@ You are an expert in Rust, async programming, and concurrent systems.
 
 ## Testing
 - Tests must be placed in test directory, do not place tests in the project modules what are tested
-
-
-  

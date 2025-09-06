@@ -6,12 +6,11 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-/// Handles MCP commands and their execution logic.
-pub mod commands;
-
 /// Defines error types and a custom `Result` type for the wallet.
 pub mod error;
 pub mod models;
+/// The MCP service implementation.
+pub mod service;
 pub mod transaction;
 pub mod wallet;
 

@@ -1,30 +1,13 @@
 //! MCP Wallet Server - Main entry point
 
 use anyhow::Result;
-use clap::Parser;
-use mcp_wallet::{commands::{handle_mcp_command, tool_definition::generate_tool_definition}, wallet::Wallet, WalletError};
-use std::io::{self, BufRead};
-
-/// A lightweight, command-line Ethereum wallet server with an MCP interface.
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Print the tool definition as JSON and exit.
-    #[arg(long)]
-    get_tool_definition: bool,
-}
+use mcp_wallet::{service::WalletHandler, wallet::Wallet, WalletError};
+use rmcp::ServiceExt;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = Args::parse();
-
-    if args.get_tool_definition {
-        let tool_definition = generate_tool_definition();
-        let json = serde_json::to_string_pretty(&tool_definition)?;
-        println!("{}", json);
-        return Ok(());
-    }
-
     // Initialize logger to write to stderr
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .target(env_logger::Target::Stderr)
@@ -58,39 +41,26 @@ async fn main() -> Result<()> {
 
     wallet.set_file_path(&wallet_path);
 
-    // Main MCP server loop
-    log::info!("MCP Wallet Server started in stdio mode.");
-    let stdin = io::stdin();
-    for line in stdin.lock().lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(e) => {
-                let response = serde_json::json!({ "status": "error", "error": e.to_string() });
-                println!("{}", response);
-                continue;
-            }
-        };
+    // Wrap the wallet in an Arc<Mutex<>> to allow shared access
+    let wallet = Arc::new(Mutex::new(wallet));
 
-        if line.trim().is_empty() {
-            continue;
-        }
+    // Create the wallet service handler
+    let handler = WalletHandler::new(wallet.clone());
 
-        let response = handle_mcp_command(&line, &mut wallet).await;
-        let response_json = serde_json::to_string(&response)?;
-        println!("{}", response_json);
+    // Create the stdio transport
+    let transport = (tokio::io::stdin(), tokio::io::stdout());
 
-        // Save wallet if it has been modified
-        if wallet.is_dirty() {
-            match serde_json::to_string_pretty(&wallet) {
-                Ok(wallet_json) => {
-                    if let Err(e) = std::fs::write(&wallet_path, wallet_json) {
-                        log::error!("Failed to save wallet file: {}", e);
-                    }
-                }
-                Err(e) => {
-                    log::error!("Failed to serialize wallet for saving: {}", e);
-                }
-            }
+    // Start the MCP server
+    log::info!("MCP Wallet Server started in compliant stdio mode.");
+    handler.serve(transport).await?;
+
+    // After the server shuts down, save the wallet if it has changed.
+    let wallet = wallet.lock().await;
+    if wallet.is_dirty() {
+        if let Some(path) = wallet.file_path() {
+            log::info!("Saving wallet to {}", path.display());
+            let contents = serde_json::to_string_pretty(&*wallet)?;
+            std::fs::write(path, contents)?;
         }
     }
 

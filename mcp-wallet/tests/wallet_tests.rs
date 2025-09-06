@@ -48,3 +48,41 @@ fn test_get_account() {
     // Non-existent account
     assert!(wallet.get_account("nonexistent").is_none());
 }
+
+#[test]
+fn test_list_accounts() {
+    let mut wallet = Wallet::new();
+    let address1 = wallet.create_account("account1").unwrap();
+    let address2 = wallet.create_account("account2").unwrap();
+
+    let accounts = wallet.list_accounts();
+    assert_eq!(accounts.len(), 2);
+
+    let addresses: Vec<_> = accounts.iter().map(|(addr, _)| *addr).collect();
+    assert!(addresses.contains(&address1));
+    assert!(addresses.contains(&address2));
+}
+
+#[test]
+fn test_save_and_load_wallet() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("test-wallet.json");
+
+    // 1. Create a wallet, add an account, and save it
+    let mut wallet_to_save = Wallet::new();
+    wallet_to_save.set_file_path(&file_path);
+    let original_address = wallet_to_save.create_account("saved_account").unwrap();
+
+    let contents = serde_json::to_string_pretty(&wallet_to_save).unwrap();
+    std::fs::write(&file_path, contents).unwrap();
+
+    // 2. Load the wallet from the file
+    let loaded_contents = std::fs::read_to_string(&file_path).unwrap();
+    let loaded_wallet: Wallet = serde_json::from_str(&loaded_contents).unwrap();
+
+    // 3. Verify the loaded wallet has the correct data
+    let (account, address) = loaded_wallet.get_account("saved_account").unwrap();
+    assert_eq!(address, original_address);
+    assert_eq!(account.aliases, vec!["saved_account"]);
+    assert_eq!(account.nonce, 0);
+}
