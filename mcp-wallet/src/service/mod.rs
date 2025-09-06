@@ -269,7 +269,11 @@ impl WalletHandler {
         params: Parameters<GetTxInfoParams>,
     ) -> Result<CallToolResult, ErrorData> {
         let tx_hash = H256::from_str(
-            params.0.transaction_hash.strip_prefix("0x").unwrap_or(&params.0.transaction_hash),
+            params
+                .0
+                .transaction_hash
+                .strip_prefix("0x")
+                .unwrap_or(&params.0.transaction_hash),
         )
         .map_err(|e| to_invalid_params_error(e.to_string()))?;
 
@@ -291,8 +295,9 @@ impl WalletHandler {
     ) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
 
-        let to_address = Address::from_str(&params.0.to)
-            .map_err(|_| to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to)))?;
+        let to_address = Address::from_str(&params.0.to).map_err(|_| {
+            to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to))
+        })?;
         let value_wei = ethers::utils::parse_ether(params.0.value_eth)
             .map_err(|e| to_invalid_params_error(e.to_string()))?;
 

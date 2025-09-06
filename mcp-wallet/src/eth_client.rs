@@ -5,7 +5,7 @@
 use crate::prelude::*;
 use ethers::{
     providers::{Http, Middleware, Provider},
-    types::{Address, Bytes, H256, Transaction},
+    types::{Address, Bytes, Transaction, H256},
     utils::format_ether,
 };
 use std::str::FromStr;

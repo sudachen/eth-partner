@@ -55,6 +55,11 @@ This task list is based on the `prd-eth-rpc-client.md` document.
   - Create a new test file: `mcp-wallet/tests/eth_client_tests.rs`.
   - Add tests for `EthClient` methods (`get_current_block`, `get_balance`, etc.).
 - [x] **Sub-task 6.2:** Manually test the MCP tools against a local testnet (e.g., Anvil).
-- [ ] **Sub-task 6.3:** Update `README.md` to document the new Ethereum tools and the `--rpc-url` argument.
+- [x] **Sub-task 6.3:** Update `README.md` to document the new Ethereum tools and the `--rpc-url` argument.
 
 ### Task 7: Final Review and Cleanup
+
+- [x] **Sub-task 7.1:** Run `cargo fmt` to format the code.
+- [x] **Sub-task 7.2:** Run `cargo clippy` to check for linter warnings.
+- [x] **Sub-task 7.3:** Ensure all tests pass.
+- [x] **Sub-task 7.4:** Final review of the code for any missed issues.
