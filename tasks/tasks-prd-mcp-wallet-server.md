@@ -69,12 +69,12 @@
   - [x] 7.4 Validate transaction before signing
   - [x] 7.5 Add tests for transaction signing
 
-- [ ] 8.0 Set up MCP stdio interface
-  - [ ] 8.1 Implement command parsing from stdin
-  - [ ] 8.2 Set up command routing
-  - [ ] 8.3 Format output as JSON for MCP compatibility
-  - [ ] 8.4 Handle command errors gracefully
-  - [ ] 8.5 Add tests for stdio interface
+- [x] 8.0 Set up MCP stdio interface
+  - [x] 8.1 Implement command parsing from stdin
+  - [x] 8.2 Set up command routing
+  - [x] 8.3 Format output as JSON for MCP compatibility
+  - [x] 8.4 Handle command errors gracefully
+  - [x] 8.5 Add tests for stdio interface
 
 - [x] 9.0 Add error handling and validation
   - [x] 9.1 Define custom error types
@@ -83,12 +83,12 @@
   - [x] 9.4 Add error context for debugging
   - [x] 9.5 Add tests for error cases
 
-- [ ] 10.0 Add documentation and examples
-  - [ ] 10.1 Document all public APIs
-  - [ ] 10.2 Add README with usage examples
-  - [ ] 10.3 Document MCP interface specification
-  - [ ] 10.4 Add example commands and expected outputs
-  - [ ] 10.5 Add integration tests
+- [x] 10.0 Add documentation and examples
+  - [x] 10.1 Document all public APIs
+  - [x] 10.2 Add README with usage examples
+  - [x] 10.3 Document MCP interface specification
+  - [x] 10.4 Add example commands and expected outputs
+  - [x] 10.5 Add integration tests
 
 ## Notes
 
