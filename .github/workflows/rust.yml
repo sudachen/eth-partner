@@ -20,6 +20,11 @@ jobs:
     - name: Cache cargo registry and build artifacts
       uses: Swatinem/rust-cache@v2
 
+    - name: Install Foundry
+      uses: foundry-rs/setup-foundry@v1
+      with:
+        version: nightly
+
     - name: Check Formatting
       run: cargo fmt -- --check
 
