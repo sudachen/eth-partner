@@ -27,8 +27,8 @@ This task list is based on the `prd-eth-rpc-client.md` document.
 
 ### Task 3: Implement Wallet Storage
 
-- [ ] **Sub-task 3.1:** In `wallet_storage.rs`, implement a function to load a private key from a simple JSON file (e.g., `~/.mcp-wallet/key.json`).
-- [ ] **Sub-task 3.2:** The wallet should be initialized with the private key upon startup.
+- [x] **Sub-task 3.1:** In `wallet_storage.rs`, implement a function to load a private key from a simple JSON file (e.g., `~/.mcp-wallet/key.json`).
+- [x] **Sub-task 3.2:** The wallet should be initialized with the private key upon startup.
 
 ### Task 4: Implement Transaction-related Tools
 

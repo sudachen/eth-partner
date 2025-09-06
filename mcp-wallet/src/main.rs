@@ -2,7 +2,9 @@
 
 use anyhow::Result;
 use clap::Parser;
-use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet, WalletError};
+use mcp_wallet::{
+    eth_client::EthClient, service::WalletHandler, wallet::Wallet, wallet_storage, WalletError,
+};
 use rmcp::ServiceExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -26,15 +28,12 @@ async fn main() -> Result<()> {
     // Parse command-line arguments
     let args = Args::parse();
 
-    // Determine wallet file path
-    let wallet_path = dirs::home_dir()
-        .map(|mut path| {
-            path.push(".mcp-wallet.json");
-            path
-        })
-        .ok_or_else(|| {
-            WalletError::WalletError("Could not determine home directory".to_string())
-        })?;
+    // Determine home directory paths
+    let home_dir = dirs::home_dir()
+        .ok_or_else(|| WalletError::WalletError("Could not determine home directory".to_string()))?;
+
+    let wallet_path = home_dir.join(".mcp-wallet.json");
+    let key_path = home_dir.join(".mcp-wallet/key.json");
 
     // Load or create wallet
     let mut wallet = match std::fs::read_to_string(&wallet_path) {
@@ -53,6 +52,21 @@ async fn main() -> Result<()> {
             return Err(WalletError::FileError(e).into());
         }
     };
+
+    // Load the private key if it exists
+    if key_path.exists() {
+        match wallet_storage::load_key(&key_path) {
+            Ok(signer) => {
+                log::info!("Loaded private key from {}", key_path.display());
+                wallet.set_signer(signer);
+            }
+            Err(e) => {
+                log::warn!("Failed to load private key from {}: {}", key_path.display(), e);
+            }
+        }
+    } else {
+        log::warn!("Key file not found at {}. Signing will not be possible.", key_path.display());
+    }
 
     wallet.set_file_path(&wallet_path);
 
