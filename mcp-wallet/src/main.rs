@@ -54,19 +54,21 @@ async fn main() -> Result<()> {
     };
 
     // Load the private key if it exists
-    if key_path.exists() {
+    let signer = if key_path.exists() {
         match wallet_storage::load_key(&key_path) {
             Ok(signer) => {
                 log::info!("Loaded private key from {}", key_path.display());
-                wallet.set_signer(signer);
+                Some(signer)
             }
             Err(e) => {
                 log::warn!("Failed to load private key from {}: {}", key_path.display(), e);
+                None
             }
         }
     } else {
         log::warn!("Key file not found at {}. Signing will not be possible.", key_path.display());
-    }
+        None
+    };
 
     wallet.set_file_path(&wallet_path);
 
@@ -74,7 +76,7 @@ async fn main() -> Result<()> {
     let wallet = Arc::new(Mutex::new(wallet));
 
     // Create the Ethereum RPC client
-    let eth_client = Arc::new(EthClient::new(&args.rpc_url)?);
+    let eth_client = Arc::new(EthClient::new(&args.rpc_url, signer)?);
 
     // Create the wallet service handler
     let handler = WalletHandler::new(wallet.clone(), eth_client.clone());

@@ -32,9 +32,9 @@ This task list is based on the `prd-eth-rpc-client.md` document.
 
 ### Task 4: Implement Transaction-related Tools
 
-- [ ] **Sub-task 4.1:** Add a `send_signed_transaction` method to `EthClient`.
-- [ ] **Sub-task 4.2:** Add a `get_transaction_info` method to `EthClient`.
-- [ ] **Sub-task 4.3:** Implement the `transfer_eth` method in `EthClient`. This method will:
+- [x] **Sub-task 4.1:** Add a `send_signed_transaction` method to `EthClient`.
+- [x] **Sub-task 4.2:** Add a `get_transaction_info` method to `EthClient`.
+- [x] **Sub-task 4.3:** Implement the `transfer_eth` method in `EthClient`. This method will:
     - Create a transaction request.
     - Estimate the gas fee.
     - Sign the transaction using the loaded private key.

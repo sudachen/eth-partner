@@ -1,7 +1,7 @@
 use ethers::core::types::SignatureError;
 use ethers::providers::ProviderError;
-use ethers::types::Address;
-use ethers::utils::rlp::DecoderError;
+use ethers::types::{Address, H256};
+use ethers::utils::{self, rlp::DecoderError};
 use thiserror::Error;
 
 /// Custom error type for the MCP Wallet.
@@ -75,6 +75,14 @@ pub enum WalletError {
     /// Error during RPC client initialization.
     #[error("RPC client initialization error: {0}")]
     RpcClientInitialization(String),
+
+    /// Error when a transaction is not found by its hash.
+    #[error("Transaction not found for hash: {0}")]
+    TransactionNotFound(H256),
+
+    /// Error during ETH value conversion.
+    #[error("Value conversion error: {0}")]
+    ConversionError(#[from] self::utils::ConversionError),
 }
 
 /// Result type for wallet operations.

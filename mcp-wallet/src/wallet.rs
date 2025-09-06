@@ -44,9 +44,6 @@ pub struct Wallet {
     accounts: HashMap<Address, Account>,
     /// Map of aliases to account addresses.
     aliases: HashMap<String, Address>,
-    /// The primary signer for the wallet, loaded from a key file.
-    #[serde(skip)]
-    signer: Option<LocalWallet>,
     /// Path to the wallet file.
     #[serde(skip)]
     file_path: Option<PathBuf>,
@@ -61,31 +58,12 @@ impl Wallet {
         Self::default()
     }
 
-    /// Sets the primary signer for the wallet.
-    pub fn set_signer(&mut self, signer: LocalWallet) {
-        self.signer = Some(signer);
-    }
-
     /// Gets the signer for an account by its address.
     pub fn get_signer(&self, address: &Address) -> Result<LocalWallet, WalletError> {
-        // First, try to get the signer from the multi-account map
-        if let Some(signer) = self
-            .accounts
+        self.accounts
             .get(address)
             .and_then(|acc| LocalWallet::from_str(&acc.private_key).ok())
-        {
-            return Ok(signer);
-        }
-
-        // If not found, check if the global signer matches the requested address
-        if let Some(ref signer) = self.signer {
-            if signer.address() == *address {
-                return Ok(signer.clone());
-            }
-        }
-
-        // If no matching signer is found, return an error
-        Err(WalletError::AccountNotFound(*address))
+            .ok_or_else(|| WalletError::AccountNotFound(*address))
     }
 
     /// Creates a new account with a random private key and adds it to the wallet.
