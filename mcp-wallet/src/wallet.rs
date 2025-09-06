@@ -5,7 +5,7 @@ use crate::{
     models::{Eip1559TransactionRequest, SignedTransaction},
 };
 use ethers::{
-    core::types::transaction::eip2718::TypedTransaction,
+    core::types::{transaction::eip2718::TypedTransaction, U256},
     signers::{LocalWallet, Signer},
     types::Address,
 };
@@ -181,9 +181,17 @@ impl Wallet {
         tx_request: &Eip1559TransactionRequest,
         from_identifier: &str,
     ) -> Result<SignedTransaction> {
-        let (_, from_address) = self
+        let (account, from_address) = self
             .get_account(from_identifier)
             .ok_or_else(|| WalletError::SignerNotFound(from_identifier.to_string()))?;
+
+        // Validate the transaction nonce
+        if tx_request.nonce != U256::from(account.nonce) {
+            return Err(WalletError::NonceMismatch {
+                expected: account.nonce,
+                actual: tx_request.nonce.as_u64(),
+            });
+        }
 
         let signer = self.get_signer(&from_address)?;
 
@@ -295,6 +303,24 @@ mod tests {
         // Check if the nonce was incremented
         let (account_after, _) = wallet.get_account("testaccount").unwrap();
         assert_eq!(account_after.nonce, initial_nonce + 1);
+    }
+
+    #[tokio::test]
+    async fn test_sign_transaction_with_nonce_mismatch() {
+        let mut wallet = create_test_wallet();
+        let (account, _) = wallet.get_account("testaccount").unwrap();
+        let incorrect_nonce = account.nonce + 1;
+
+        let tx_request = TransactionBuilder::new()
+            .chain_id(1)
+            .to(Address::random())
+            .value(U256::from(100))
+            .nonce(U256::from(incorrect_nonce))
+            .build();
+
+        let result = wallet.sign_transaction(&tx_request, "testaccount").await;
+
+        assert!(matches!(result, Err(WalletError::NonceMismatch { .. })));
     }
 
     #[test]

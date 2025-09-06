@@ -42,6 +42,15 @@ pub enum WalletError {
     #[error("Alias '{0}' already exists.")]
     AliasAlreadyExists(String),
 
+    /// Error when the transaction nonce does not match the account's nonce.
+    #[error("Nonce mismatch: expected {expected}, but got {actual}")]
+    NonceMismatch {
+        /// The expected nonce of the account.
+        expected: u64,
+        /// The actual nonce provided in the transaction.
+        actual: u64,
+    },
+
     /// Error from the ethers-rs signer module.
     #[error("Ethers signer error: {0}")]
     EthersSignerError(#[from] ethers::signers::WalletError),

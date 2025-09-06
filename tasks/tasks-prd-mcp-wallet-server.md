@@ -62,12 +62,12 @@
   - [x] 6.4 Add gas estimation
   - [x] 6.5 Add tests for transaction creation
 
-- [ ] 7.0 Implement transaction signing
-  - [ ] 7.1 Sign transaction with private key
-  - [ ] 7.2 Handle different transaction types (EIP-1559)
-  - [ ] 7.3 Update nonce after signing
-  - [ ] 7.4 Validate transaction before signing
-  - [ ] 7.5 Add tests for transaction signing
+- [x] 7.0 Implement transaction signing
+  - [x] 7.1 Sign transaction with private key
+  - [x] 7.2 Handle different transaction types (EIP-1559)
+  - [x] 7.3 Update nonce after signing
+  - [x] 7.4 Validate transaction before signing
+  - [x] 7.5 Add tests for transaction signing
 
 - [ ] 8.0 Set up MCP stdio interface
   - [ ] 8.1 Implement command parsing from stdin
