@@ -155,7 +155,10 @@ impl Wallet {
 
     /// Lists all accounts in the wallet.
     pub fn list_accounts(&self) -> Vec<(Address, &Account)> {
-        self.accounts.iter().map(|(&addr, acc)| (addr, acc)).collect()
+        self.accounts
+            .iter()
+            .map(|(&addr, acc)| (addr, acc))
+            .collect()
     }
 
     /// Sets the nonce for a specific account.
@@ -243,7 +246,5 @@ impl Wallet {
 fn is_valid_alias(alias: &str) -> bool {
     !alias.is_empty()
         && alias.len() <= 20
-        && alias
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+        && alias.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }

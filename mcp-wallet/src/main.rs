@@ -19,7 +19,9 @@ async fn main() -> Result<()> {
             path.push(".mcp-wallet.json");
             path
         })
-        .ok_or_else(|| WalletError::WalletError("Could not determine home directory".to_string()))?;
+        .ok_or_else(|| {
+            WalletError::WalletError("Could not determine home directory".to_string())
+        })?;
 
     // Load or create wallet
     let mut wallet = match std::fs::read_to_string(&wallet_path) {

@@ -3,12 +3,13 @@
 use crate::{wallet::Wallet, WalletError};
 use ethers::types::{Address, U256};
 use rmcp::{
-    ServerHandler,
-    // <DON'T CHANGE THIS LINE>
-    handler::server::{wrapper::Parameters,tool::ToolRouter},
+    handler::server::{tool::ToolRouter, wrapper::Parameters},
     model::{CallToolResult, ErrorData},
     model::{ServerCapabilities, ServerInfo},
-    tool, tool_router, tool_handler
+    tool,
+    tool_handler,
+    tool_router,
+    ServerHandler,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -55,27 +56,30 @@ pub struct WalletHandler {
 }
 
 #[tool_router]
+#[allow(missing_docs)]
 impl WalletHandler {
     /// Creates a new `WalletHandler`.
     pub fn new(wallet: Arc<Mutex<Wallet>>) -> Self {
         Self {
             wallet,
-            // <DON'T CHANGE THIS LINE>!!!!!
             tool_router: Self::tool_router(),
         }
     }
 
-    /// Creates a new Ethereum account.
-    #[tool]
-    async fn new_account(&self, params: Parameters<NewAccountParams>) -> Result<CallToolResult, ErrorData> {
+    #[tool(description = "Creates a new Ethereum account.")]
+    async fn new_account(
+        &self,
+        params: Parameters<NewAccountParams>,
+    ) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
-        let address = wallet.create_account(params.0.alias.as_deref().unwrap_or("")).map_err(to_internal_error)?;
+        let address = wallet
+            .create_account(params.0.alias.as_deref().unwrap_or(""))
+            .map_err(to_internal_error)?;
         let result = json!({ "address": format!("0x{:x}", address) });
         Ok(CallToolResult::structured(result))
     }
 
-    /// Lists all Ethereum accounts in the wallet.
-    #[tool]
+    #[tool(description = "Lists all Ethereum accounts in the wallet.")]
     async fn list_accounts(&self) -> Result<CallToolResult, ErrorData> {
         let wallet = self.wallet.lock().await;
         let accounts = wallet.list_accounts();
@@ -89,33 +93,57 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
-    /// Sets an alias for an Ethereum account.
-    #[tool]
-    async fn set_alias(&self, params: Parameters<SetAliasParams>) -> Result<CallToolResult, ErrorData> {
+    #[tool(description = "Sets an alias for an Ethereum account.")]
+    async fn set_alias(
+        &self,
+        params: Parameters<SetAliasParams>,
+    ) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
-        let address = Address::from_str(&params.0.address).map_err(|_| to_internal_error(format!("Invalid address: {}", params.0.address)))?;
-        wallet.add_alias(address, params.0.alias.clone()).map_err(to_internal_error)?;
+        let address = Address::from_str(&params.0.address)
+            .map_err(|_| to_internal_error(format!("Invalid address: {}", params.0.address)))?;
+        wallet
+            .add_alias(address, params.0.alias.clone())
+            .map_err(to_internal_error)?;
         let result = Value::Null;
         Ok(CallToolResult::structured(result))
     }
 
-    /// Creates an EIP-1559 transaction request.
-    #[tool]
-    async fn create_tx(&self, params: Parameters<CreateTxParams>) -> Result<CallToolResult, ErrorData> {
+    #[tool(description = "Creates an EIP-1559 transaction request.")]
+    async fn create_tx(
+        &self,
+        params: Parameters<CreateTxParams>,
+    ) -> Result<CallToolResult, ErrorData> {
         let wallet = self.wallet.lock().await;
-        let (from_account, _) = wallet.get_account(&params.0.from).ok_or_else(|| to_internal_error(WalletError::SignerNotFound(params.0.from.clone())))?;
-        let to_address = Address::from_str(&params.0.to).map_err(|_| to_internal_error(format!("Invalid 'to' address: {}", params.0.to)))?;
-        let value = U256::from_dec_str(&params.0.value).map_err(|_| to_internal_error(format!("Invalid 'value': {}", params.0.value)))?;
+        let (from_account, _) = wallet
+            .get_account(&params.0.from)
+            .ok_or_else(|| to_internal_error(WalletError::SignerNotFound(params.0.from.clone())))?;
+        let to_address = Address::from_str(&params.0.to)
+            .map_err(|_| to_internal_error(format!("Invalid 'to' address: {}", params.0.to)))?;
+        let value = U256::from_dec_str(&params.0.value)
+            .map_err(|_| to_internal_error(format!("Invalid 'value': {}", params.0.value)))?;
 
-        let mut builder = crate::transaction::TransactionBuilder::new().chain_id(params.0.chain_id).to(to_address).value(value).nonce(from_account.nonce);
+        let mut builder = crate::transaction::TransactionBuilder::new()
+            .chain_id(params.0.chain_id)
+            .to(to_address)
+            .value(value)
+            .nonce(from_account.nonce);
 
-        if let Some(gas) = params.0.gas { builder = builder.gas(gas); }
+        if let Some(gas) = params.0.gas {
+            builder = builder.gas(gas);
+        }
         if let Some(max_fee_str) = &params.0.max_fee_per_gas {
-            let max_fee = U256::from_dec_str(max_fee_str).map_err(|_| to_internal_error(format!("Invalid 'max_fee_per_gas': {}", max_fee_str)))?;
+            let max_fee = U256::from_dec_str(max_fee_str).map_err(|_| {
+                to_internal_error(format!("Invalid 'max_fee_per_gas': {}", max_fee_str))
+            })?;
             builder = builder.max_fee_per_gas(max_fee);
         }
         if let Some(max_prio_str) = &params.0.max_priority_fee_per_gas {
-            let max_prio = U256::from_dec_str(max_prio_str).map_err(|_| to_internal_error(format!("Invalid 'max_priority_fee_per_gas': {}", max_prio_str)))?;
+            let max_prio = U256::from_dec_str(max_prio_str).map_err(|_| {
+                to_internal_error(format!(
+                    "Invalid 'max_priority_fee_per_gas': {}",
+                    max_prio_str
+                ))
+            })?;
             builder = builder.max_priority_fee_per_gas(max_prio);
         }
 
@@ -124,13 +152,17 @@ impl WalletHandler {
         Ok(CallToolResult::structured(result))
     }
 
-    /// Signs a transaction with a specified account.
-    #[tool]
+    #[tool(description = "Signs a transaction with a specified account.")]
     async fn sign_tx(&self, params: Parameters<SignTxParams>) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
-        let tx_request: crate::models::Eip1559TransactionRequest = serde_json::from_value(params.0.tx_json.clone()).map_err(to_invalid_params_error)?;
-        let signed_tx = wallet.sign_transaction(&tx_request, &params.0.from).await.map_err(to_internal_error)?;
-        let result = serde_json::to_value(JsonSignedTransaction::from(signed_tx)).map_err(to_internal_error)?;
+        let tx_request: crate::models::Eip1559TransactionRequest =
+            serde_json::from_value(params.0.tx_json.clone()).map_err(to_invalid_params_error)?;
+        let signed_tx = wallet
+            .sign_transaction(&tx_request, &params.0.from)
+            .await
+            .map_err(to_internal_error)?;
+        let result = serde_json::to_value(JsonSignedTransaction::from(signed_tx))
+            .map_err(to_internal_error)?;
         Ok(CallToolResult::structured(result))
     }
 }
@@ -140,7 +172,10 @@ impl ServerHandler for WalletHandler {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some("A wallet".into()),
-            capabilities: ServerCapabilities::builder().enable_tools().enable_logging().build(),
+            capabilities: ServerCapabilities::builder()
+                .enable_tools()
+                .enable_logging()
+                .build(),
             ..Default::default()
         }
     }
@@ -161,7 +196,11 @@ impl From<crate::models::SignedTransaction> for JsonSignedTransaction {
         Self {
             raw_transaction: format!("0x{}", hex::encode(tx.raw_transaction)),
             hash: format!("0x{}", hex::encode(tx.hash)),
-            signature: (tx.signature.0, format!("0x{}", hex::encode(tx.signature.1)), format!("0x{}", hex::encode(tx.signature.2))),
+            signature: (
+                tx.signature.0,
+                format!("0x{}", hex::encode(tx.signature.1)),
+                format!("0x{}", hex::encode(tx.signature.2)),
+            ),
             chain_id: tx.chain_id,
         }
     }

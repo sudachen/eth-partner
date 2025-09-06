@@ -1,7 +1,7 @@
 //! Integration tests for the fully compliant MCP Wallet Server.
 
 use mcp_wallet::{service::WalletHandler, wallet::Wallet};
-use rmcp::{model::{CallToolRequestParam}, serve_client, service::ServiceExt};
+use rmcp::{model::CallToolRequestParam, serve_client, service::ServiceExt};
 use serde_json::{json, Map, Value};
 use std::sync::Arc;
 use tokio::{io::duplex, sync::Mutex};
@@ -17,23 +17,23 @@ async fn test_mcp_client_workflow() {
     // Spawn the server to run in the background
     let server_wallet = wallet.clone();
     tokio::spawn(async move {
-        let server = WalletHandler::new(server_wallet).serve(server_stream).await.unwrap();
+        let server = WalletHandler::new(server_wallet)
+            .serve(server_stream)
+            .await
+            .unwrap();
         server.waiting().await.unwrap();
         eprintln!("mcp server finished")
     });
 
     // Create an MCP client connected to the in-memory stream
     // <DON'T CHANGE THIS LINE> it how client is creating
-    let client = serve_client((),client_stream).await.unwrap();
+    let client = serve_client((), client_stream).await.unwrap();
 
     let nfo = client.peer_info();
     println!("{:?}", nfo);
 
     // 2. List tools to verify server is running and self-describing
-    let list_tools_result = client
-        .list_tools(None)
-        .await
-        .expect("Failed to list tools");
+    let list_tools_result = client.list_tools(None).await.expect("Failed to list tools");
     assert!(list_tools_result.tools.len() >= 5);
     let new_account_tool = list_tools_result
         .tools

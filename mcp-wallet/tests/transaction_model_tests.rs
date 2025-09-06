@@ -1,9 +1,9 @@
-use mcp_wallet::models::Eip1559TransactionRequest;
 use ethers::{
+    core::rand::thread_rng,
     core::types::{transaction::eip2718::TypedTransaction, Address, U256},
     signers::{LocalWallet, Signer},
-    core::rand::thread_rng,
 };
+use mcp_wallet::models::Eip1559TransactionRequest;
 
 #[test]
 fn test_eip1559_transaction_creation() {

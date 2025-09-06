@@ -5,10 +5,11 @@ use std::fmt;
 use std::str::FromStr;
 
 /// Represents an Ethereum network
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Network {
     /// Ethereum Mainnet
+    #[default]
     Mainnet,
     /// Sepolia testnet
     Sepolia,
@@ -20,12 +21,6 @@ pub enum Network {
     Devnet,
     /// A custom network where chain ID and RPC URL are provided by the user
     Custom,
-}
-
-impl Default for Network {
-    fn default() -> Self {
-        Network::Mainnet
-    }
 }
 
 impl FromStr for Network {

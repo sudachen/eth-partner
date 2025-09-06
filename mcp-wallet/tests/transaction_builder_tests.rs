@@ -1,5 +1,5 @@
-use mcp_wallet::transaction::TransactionBuilder;
 use ethers::core::types::{Address, U256};
+use mcp_wallet::transaction::TransactionBuilder;
 
 #[test]
 fn test_transaction_builder_builds_correctly() {
@@ -35,10 +35,7 @@ fn test_transaction_builder_builds_correctly() {
 
 #[test]
 fn test_transaction_builder_defaults_gas_fields() {
-    let tx_request = TransactionBuilder::new()
-        .chain_id(1)
-        .nonce(0)
-        .build();
+    let tx_request = TransactionBuilder::new().chain_id(1).nonce(0).build();
 
     assert_eq!(tx_request.gas, U256::from(21000));
     assert_eq!(tx_request.max_fee_per_gas, U256::zero());

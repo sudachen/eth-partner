@@ -1,9 +1,5 @@
-use mcp_wallet::{
-    error::WalletError,
-    transaction::TransactionBuilder,
-    wallet::Wallet,
-};
 use ethers::core::types::{Address, U256};
+use mcp_wallet::{error::WalletError, transaction::TransactionBuilder, wallet::Wallet};
 
 fn create_test_wallet() -> Wallet {
     let mut wallet = Wallet::new();
@@ -30,7 +26,9 @@ fn test_add_alias() {
     let address = wallet.create_account("mainaccount").unwrap();
 
     // Add valid alias
-    wallet.add_alias(address, "secondaryalias".to_string()).unwrap();
+    wallet
+        .add_alias(address, "secondaryalias".to_string())
+        .unwrap();
     assert_eq!(
         wallet.get_account("secondaryalias").map(|(_, addr)| addr),
         Some(address)
