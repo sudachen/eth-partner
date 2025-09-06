@@ -14,7 +14,6 @@ pub mod models;
 pub mod service;
 pub mod transaction;
 pub mod wallet;
-pub mod wallet_storage;
 
 // Re-export commonly used types and traits
 pub use error::{Result, WalletError};
