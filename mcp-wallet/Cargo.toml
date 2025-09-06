@@ -1,0 +1,46 @@
+[package]
+name = "mcp-wallet"
+version = "0.1.0"
+edition = "2021"
+description = "MCP Wallet Server for Ethereum"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT OR Apache-2.0"
+repository = ""
+documentation = ""
+readme = "README.md"
+
+[lib]
+name = "mcp_wallet"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mcp-wallet"
+path = "src/main.rs"
+
+[features]
+default = ["ethers/rustls"]
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.4", features = ["derive"] }
+colored = "2.1.0"
+comfy-table = "7.1.0"
+dirs = "5.0.1"
+dotenv = "0.15.0"
+env_logger = "0.11.3"
+ethers = { version = "2.0.14", features = ["legacy"] }
+hex = "0.4.3"
+log = "0.4.21"
+prettytable-rs = "0.10.0"
+rpassword = "7.3.1"
+rand = "0.8.5"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.117"
+thiserror = "1.0.61"
+tokio = { version = "1.38.0", features = ["full"] }
+url = "2.5.0"
+
+[dev-dependencies]
+tempfile = "3.3"
+assert_cmd = "2.0"
+predicates = "3.1.0"
