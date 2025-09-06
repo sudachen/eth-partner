@@ -21,14 +21,17 @@ jobs:
       uses: Swatinem/rust-cache@v2
 
     - name: Install Foundry
-      run: |
-        curl -L https://foundry.paradigm.xyz | bash
-        echo "$HOME/.config/.foundry/bin" >> $GITHUB_PATH
-        source ~/.bashrc
-        cat ~/.bashrc
-        env
-        ls $HOME/.config/.foundry/bin
-        $HOME/.config/.foundry/bin/foundryup
+      uses: foundry-rs/foundry-toolchain@v1
+
+#    - name: Install Foundry
+#      run: |
+#        curl -L https://foundry.paradigm.xyz | bash
+#        echo "$HOME/.config/.foundry/bin" >> $GITHUB_PATH
+#        source ~/.bashrc
+#        cat ~/.bashrc
+#        env
+#        ls $HOME/.config/.foundry/bin
+#        $HOME/.config/.foundry/bin/foundryup
 
     - name: Check Formatting
       run: cargo fmt -- --check
