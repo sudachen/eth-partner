@@ -12,6 +12,7 @@ readme = "README.md"
 [lib]
 name = "mcp_wallet"
 path = "src/lib.rs"
+doctest = false
 
 [[bin]]
 name = "mcp-wallet"
