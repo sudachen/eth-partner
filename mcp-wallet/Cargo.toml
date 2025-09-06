@@ -46,3 +46,4 @@ tempfile = "3.3"
 assert_cmd = "2.0"
 predicates = "3.1.0"
 rmcp = { version = "0.6.3", features = ["macros"] }
+port_check = "0.1.5"

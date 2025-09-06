@@ -2164,6 +2164,7 @@ dependencies = [
  "ethers",
  "hex",
  "log",
+ "port_check",
  "predicates",
  "prettytable-rs",
  "rand 0.8.5",
@@ -2570,6 +2571,12 @@ name = "pkg-config"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
+
+[[package]]
+name = "port_check"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6519412c9e0d4be579b9f0618364d19cb434b324fc6ddb1b27b1e682c7105ed"
 
 [[package]]
 name = "portable-atomic"
