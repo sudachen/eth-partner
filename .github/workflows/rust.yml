@@ -21,9 +21,10 @@ jobs:
       uses: Swatinem/rust-cache@v2
 
     - name: Install Foundry
-      uses: foundry-rs/setup-foundry@v1
-      with:
-        version: nightly
+      run: |
+        curl -L https://foundry.paradigm.xyz | bash
+        echo "$HOME/.foundry/bin" >> $GITHUB_PATH
+        foundryup
 
     - name: Check Formatting
       run: cargo fmt -- --check
