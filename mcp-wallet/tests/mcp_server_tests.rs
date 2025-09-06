@@ -111,3 +111,30 @@ fn test_full_workflow() {
 
     child.kill().unwrap();
 }
+
+#[test]
+fn test_get_tool_definition_command() {
+    let mut cmd = Command::cargo_bin("mcp-wallet").unwrap();
+    let mut child = cmd
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn mcp-wallet process");
+
+    let mut writer = child.stdin.take().unwrap();
+    let mut reader = BufReader::new(child.stdout.take().unwrap());
+
+    let get_definition_cmd = json!({ "command": "get_tool_definition" });
+    writeln!(writer, "{}", get_definition_cmd).unwrap();
+    writer.flush().unwrap();
+
+    let mut line = String::new();
+    reader.read_line(&mut line).unwrap();
+    let response: Value = serde_json::from_str(&line).unwrap();
+
+    assert_eq!(response["status"], "success");
+    let tool_definition = &response["data"];
+    assert_eq!(tool_definition["tool"]["name"], "eth_wallet_manager");
+
+    child.kill().unwrap();
+}

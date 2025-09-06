@@ -1,6 +1,9 @@
-/// MCP command processing for the wallet server.
+//! MCP command processing for the wallet server.
+
+pub mod tool_definition;
 
 use crate::{transaction::TransactionBuilder, wallet::Wallet, WalletError, models::Eip1559TransactionRequest};
+use self::tool_definition::generate_tool_definition;
 use ethers::types::{Address, U256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -64,6 +67,10 @@ pub async fn handle_mcp_command(command: &str, wallet: &mut Wallet) -> McpRespon
 /// Dispatches a parsed command to the appropriate handler.
 async fn dispatch_command(request: McpRequest, wallet: &mut Wallet) -> McpResponse {
     let result = match request.command.as_str() {
+        "get_tool_definition" => {
+            let definition = generate_tool_definition();
+            serde_json::to_value(definition).map_err(WalletError::JsonError)
+        }
         "new-account" => {
             let params: NewAccountParams = serde_json::from_value(request.params).unwrap_or_default();
             new_account(wallet, params.alias)

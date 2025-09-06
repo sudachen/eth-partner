@@ -1,11 +1,30 @@
 //! MCP Wallet Server - Main entry point
 
 use anyhow::Result;
-use mcp_wallet::{commands::handle_mcp_command, wallet::Wallet, WalletError};
+use clap::Parser;
+use mcp_wallet::{commands::{handle_mcp_command, tool_definition::generate_tool_definition}, wallet::Wallet, WalletError};
 use std::io::{self, BufRead};
+
+/// A lightweight, command-line Ethereum wallet server with an MCP interface.
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Print the tool definition as JSON and exit.
+    #[arg(long)]
+    get_tool_definition: bool,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Args::parse();
+
+    if args.get_tool_definition {
+        let tool_definition = generate_tool_definition();
+        let json = serde_json::to_string_pretty(&tool_definition)?;
+        println!("{}", json);
+        return Ok(());
+    }
+
     // Initialize logger to write to stderr
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .target(env_logger::Target::Stderr)
