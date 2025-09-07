@@ -36,7 +36,7 @@ Based on `prd-repl-app.md`.
   - [x] **3.3:** Initialize `rig`'s `GeminiProvider` in `main.rs` using the API key from config.
 
 ## 4. Agent & Tool Integration
-- [ ] **T4: Set up the `rig` agent and integrate tools.**
+- [x] **T4: Set up the `rig` agent and integrate tools.**
   - [x] **4.1:** Add `rig` as a dependency.
   - [x] **4.2:** Create an `agent.rs` module to initialize the `rig` agent and the Re-Act loop.
   - [x] **4.3:** Create a `tools` module.
@@ -46,6 +46,6 @@ Based on `prd-repl-app.md`.
 
 ## 5. Finalization & Testing
 - [ ] **T5: Polish and finalize the application.**
-  - [ ] **5.1:** Write unit and integration tests for key components (config loading, command parsing).
-  - [ ] **5.2:** Add comprehensive error handling.
-  - [ ] **5.3:** Write a `README.md` for the `repl` crate explaining how to configure and run the application.
+  - [x] **5.1:** Write unit and integration tests for key components (config loading, command parsing).
+  - [x] **5.2:** Add comprehensive error handling.
+  - [x] **5.3:** Write a `README.md` for the `repl` crate explaining how to configure and run the application.

@@ -4,7 +4,7 @@ mod tools;
 
 use crate::agent::ReplAgent;
 use crate::tools::web_search::WebSearchTool;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use rig::client::{CompletionClient, ProviderClient};
 use rig::providers::gemini;
 use rustyline::error::ReadlineError;
@@ -13,7 +13,7 @@ use rustyline::Editor;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config = config::load()?;
+    let config = config::load().context("Failed to load configuration")?;
     println!("Loaded config: {:?}", config);
 
     // --- Agent Setup ---
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     };
 
     // --- REPL Loop ---
-    let mut rl = Editor::<(), DefaultHistory>::new()?;
+    let mut rl = Editor::<(), DefaultHistory>::new().context("Failed to create REPL editor")?;
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
                 } else if let Some(ref agent) = agent {
                     match agent.run(&line).await {
                         Ok(response) => println!("Response: {}\n", response),
-                        Err(e) => eprintln!("Agent error: {}\n", e),
+                        Err(e) => eprintln!("Agent error: {:#?}\n", e),
                     }
                 } else {
                     println!("LLM agent not initialized. Please set GEMINI_API_KEY in your config.");
@@ -70,13 +70,13 @@ async fn main() -> Result<()> {
                 break;
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                eprintln!("REPL Error: {:#?}", err);
                 break;
             }
         }
     }
 
-    rl.save_history("history.txt")?;
+    rl.save_history("history.txt").context("Failed to save REPL history")?;
 
     Ok(())
 }

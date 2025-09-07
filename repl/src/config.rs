@@ -3,10 +3,10 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Represents the overall application configuration.
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct Config {
     /// LLM provider settings.
     #[serde(default)]
@@ -22,21 +22,21 @@ pub struct Config {
 }
 
 /// Configuration specific to the LLM provider.
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct LlmConfig {
     /// The Google API key for Gemini.
     pub google_api_key: Option<String>,
 }
 
 /// Configuration for tools.
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct ToolsConfig {
     /// The Brave Search API key.
     pub brave_api_key: Option<String>,
 }
 
 /// Configuration for the embedded MCP wallet server.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(default)]
 pub struct WalletServerConfig {
     /// The URL of the Ethereum RPC endpoint.
@@ -54,19 +54,26 @@ impl Default for WalletServerConfig {
     }
 }
 
-/// Loads the application configuration.
-///
-/// The configuration is loaded from `~/.config/eth-partner/config.json`.
-/// If the file does not exist, a default configuration is returned.
+/// Loads the application configuration from the default path.
 pub fn load() -> Result<Config> {
-    let config_path = get_config_path()?;
+    let config_path = get_default_config_path()?;
+    load_from_path(&config_path)
+}
 
-    if !config_path.exists() {
+/// Loads the application configuration from a specific path.
+///
+/// If the file does not exist, a default configuration is returned.
+pub fn load_from_path(path: &Path) -> Result<Config> {
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .with_context(|| "Failed to create config directory")?;
+        }
         return Ok(Config::default());
     }
 
-    let config_content = fs::read_to_string(&config_path)
-        .with_context(|| format!("Failed to read config file at {:?}", config_path))?;
+    let config_content = fs::read_to_string(path)
+        .with_context(|| "Failed to read config file")?;
 
     let config: Config = serde_json::from_str(&config_content)
         .with_context(|| "Failed to parse config file")?;
@@ -74,17 +81,71 @@ pub fn load() -> Result<Config> {
     Ok(config)
 }
 
-/// Returns the path to the configuration file.
+/// Returns the default path to the configuration file.
 ///
 /// The path is `~/.config/eth-partner/config.json`.
-fn get_config_path() -> Result<PathBuf> {
+fn get_default_config_path() -> Result<PathBuf> {
     let config_dir = dirs::config_dir()
         .context("Failed to find user's config directory")?
         .join("eth-partner");
 
-    // Ensure the directory exists.
-    fs::create_dir_all(&config_dir)
-        .with_context(|| format!("Failed to create config directory at {:?}", config_dir))?;
-
     Ok(config_dir.join("config.json"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{load_from_path, Config, LlmConfig, ToolsConfig, WalletServerConfig};
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_load_config_from_file() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("config.json");
+
+        let config_content = r#"
+        {
+            "llm": {
+                "google_api_key": "test_key"
+            },
+            "tools": {
+                "brave_api_key": "brave_test_key"
+            },
+            "wallet_server": {
+                "rpc_url": "http://localhost:1234",
+                "listen_address": "127.0.0.1:5678"
+            }
+        }
+        "#;
+
+        fs::write(&config_path, config_content).unwrap();
+
+        let config = load_from_path(&config_path).unwrap();
+
+        assert_eq!(
+            config,
+            Config {
+                llm: LlmConfig {
+                    google_api_key: Some("test_key".to_string()),
+                },
+                tools: ToolsConfig {
+                    brave_api_key: Some("brave_test_key".to_string()),
+                },
+                wallet_server: WalletServerConfig {
+                    rpc_url: "http://localhost:1234".to_string(),
+                    listen_address: "127.0.0.1:5678".to_string(),
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn test_load_default_config_if_not_exists() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("non_existent_config.json");
+
+        let config = load_from_path(&config_path).unwrap();
+
+        assert_eq!(config, Config::default());
+    }
 }
