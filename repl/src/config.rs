@@ -1,7 +1,7 @@
 //! Configuration management for the REPL application.
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -26,6 +26,20 @@ pub struct Config {
 pub struct LlmConfig {
     /// The Google API key for Gemini.
     pub google_api_key: Option<String>,
+    /// The generation configuration for the Gemini model.
+    #[serde(rename = "generationConfig")]
+    pub generation_config: Option<GenerationConfig>,
+}
+
+/// Configuration for Gemini's generation parameters.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerationConfig {
+    pub temperature: f64,
+    pub top_k: u32,
+    pub top_p: f64,
+    pub max_output_tokens: u32,
+    pub stop_sequences: Vec<String>,
 }
 
 /// Configuration for tools.
@@ -95,7 +109,7 @@ fn get_default_config_path() -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{load_from_path, Config, LlmConfig, ToolsConfig, WalletServerConfig};
+    use super::{load_from_path, Config, GenerationConfig, LlmConfig, ToolsConfig, WalletServerConfig};
     use std::fs;
     use tempfile::tempdir;
 
@@ -107,7 +121,14 @@ mod tests {
         let config_content = r#"
         {
             "llm": {
-                "google_api_key": "test_key"
+                "google_api_key": "test_key",
+                "generationConfig": {
+                    "temperature": 0.8,
+                    "topK": 2,
+                    "topP": 0.9,
+                    "maxOutputTokens": 1024,
+                    "stopSequences": ["stop"]
+                }
             },
             "tools": {
                 "brave_api_key": "brave_test_key"
@@ -128,6 +149,13 @@ mod tests {
             Config {
                 llm: LlmConfig {
                     google_api_key: Some("test_key".to_string()),
+                    generation_config: Some(GenerationConfig {
+                        temperature: 0.8,
+                        top_k: 2,
+                        top_p: 0.9,
+                        max_output_tokens: 1024,
+                        stop_sequences: vec!["stop".to_string()],
+                    })
                 },
                 tools: ToolsConfig {
                     brave_api_key: Some("brave_test_key".to_string()),
@@ -137,6 +165,41 @@ mod tests {
                     listen_address: "127.0.0.1:5678".to_string(),
                 },
             }
+        );
+    }
+
+    #[test]
+    fn test_load_config_with_generation_config() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("config.json");
+
+        let config_content = r#"
+        {
+            "llm": {
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "topK": 3,
+                    "topP": 0.8,
+                    "maxOutputTokens": 512,
+                    "stopSequences": []
+                }
+            }
+        }
+        "#;
+
+        fs::write(&config_path, config_content).unwrap();
+
+        let config = load_from_path(&config_path).unwrap();
+
+        assert_eq!(
+            config.llm.generation_config,
+            Some(GenerationConfig {
+                temperature: 0.7,
+                top_k: 3,
+                top_p: 0.8,
+                max_output_tokens: 512,
+                stop_sequences: vec![],
+            })
         );
     }
 

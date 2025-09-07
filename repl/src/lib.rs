@@ -6,6 +6,7 @@ pub mod config;
 pub mod tools;
 
 use crate::agent::ReplAgent;
+use crate::config::GenerationConfig;
 use crate::tools::web_search::WebSearchTool;
 use anyhow::{Context, Result};
 use rig::client::{CompletionClient, ProviderClient};
@@ -14,6 +15,7 @@ use rig::providers::gemini;
 use rustyline::error::ReadlineError;
 use rustyline::history::DefaultHistory;
 use rustyline::Editor;
+use serde_json::json;
 
 /// Runs the main REPL loop.
 #[allow(dead_code)]
@@ -32,9 +34,24 @@ pub async fn run_repl() -> Result<()> {
         let client = gemini::Client::from_env();
         println!("Gemini client initialized.");
 
-        let mut agent_builder = client
-            .agent("gemini-1.5-flash-latest")
-            .preamble("You are a helpful AI assistant. Be concise and clear. You have access to a set of tools to help you answer questions.");
+        let mut agent_builder = client.agent("gemini-1.5-flash-latest").preamble(
+            "You are a helpful AI assistant. Be concise and clear. You have access to a set of tools to help you answer questions.",
+        );
+
+        let generation_config = config.llm.generation_config.unwrap_or_else(|| {
+            println!("Using default generation config");
+            GenerationConfig {
+                temperature: 0.9,
+                top_k: 1,
+                top_p: 1.0,
+                max_output_tokens: 2048,
+                stop_sequences: vec![],
+            }
+        });
+
+        agent_builder = agent_builder.additional_params(json!({
+            "generationConfig": generation_config
+        }));
 
         if let Some(brave_api_key) = config.tools.brave_api_key {
             agent_builder = agent_builder.tool(WebSearchTool::new(brave_api_key));
