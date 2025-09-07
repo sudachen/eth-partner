@@ -1,5 +1,5 @@
-mod config;
 mod agent;
+mod config;
 mod tools;
 
 use crate::agent::ReplAgent;
@@ -33,7 +33,9 @@ async fn main() -> Result<()> {
 
         Some(ReplAgent::new(agent_builder))
     } else {
-        println!("Warning: GEMINI_API_KEY not found in config. LLM functionality will be disabled.");
+        println!(
+            "Warning: GEMINI_API_KEY not found in config. LLM functionality will be disabled."
+        );
         None
     };
 
@@ -58,7 +60,9 @@ async fn main() -> Result<()> {
                         Err(e) => eprintln!("Agent error: {:#?}\n", e),
                     }
                 } else {
-                    println!("LLM agent not initialized. Please set GEMINI_API_KEY in your config.");
+                    println!(
+                        "LLM agent not initialized. Please set GEMINI_API_KEY in your config."
+                    );
                 }
             }
             Err(ReadlineError::Interrupted) => {
@@ -76,7 +80,8 @@ async fn main() -> Result<()> {
         }
     }
 
-    rl.save_history("history.txt").context("Failed to save REPL history")?;
+    rl.save_history("history.txt")
+        .context("Failed to save REPL history")?;
 
     Ok(())
 }

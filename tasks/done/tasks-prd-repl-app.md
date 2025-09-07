@@ -45,7 +45,7 @@ Based on `prd-repl-app.md`.
   - [ ] **4.6:** Connect the REPL input (non-commands) to the agent for processing.
 
 ## 5. Finalization & Testing
-- [ ] **T5: Polish and finalize the application.**
+- [x] **T5: Polish and finalize the application.**
   - [x] **5.1:** Write unit and integration tests for key components (config loading, command parsing).
   - [x] **5.2:** Add comprehensive error handling.
   - [x] **5.3:** Write a `README.md` for the `repl` crate explaining how to configure and run the application.

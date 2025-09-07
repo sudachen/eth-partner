@@ -66,17 +66,15 @@ pub fn load() -> Result<Config> {
 pub fn load_from_path(path: &Path) -> Result<Config> {
     if !path.exists() {
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .with_context(|| "Failed to create config directory")?;
+            fs::create_dir_all(parent).with_context(|| "Failed to create config directory")?;
         }
         return Ok(Config::default());
     }
 
-    let config_content = fs::read_to_string(path)
-        .with_context(|| "Failed to read config file")?;
+    let config_content = fs::read_to_string(path).with_context(|| "Failed to read config file")?;
 
-    let config: Config = serde_json::from_str(&config_content)
-        .with_context(|| "Failed to parse config file")?;
+    let config: Config =
+        serde_json::from_str(&config_content).with_context(|| "Failed to parse config file")?;
 
     Ok(config)
 }
