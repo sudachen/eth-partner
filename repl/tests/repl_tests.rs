@@ -9,7 +9,6 @@ use rig::message::Text;
 use rig::one_or_many::OneOrMany;
 use rig::streaming::StreamingCompletionResponse;
 use std::future::{Future, IntoFuture};
-use std::pin::Pin;
 
 /// A mock completion model for testing.
 #[derive(Clone)]
@@ -28,12 +27,12 @@ impl CompletionModel for MockCompletionModel {
     type Response = OneOrMany<AssistantContent>;
     type StreamingResponse = (); // Use unit type to satisfy GetTokenUsage
 
-    fn completion<'a>(
-        &'a self,
+    fn completion(
+        &self,
         _request: CompletionRequest,
-    ) -> Pin<Box<dyn Future<Output = Result<CompletionResponse<Self::Response>, CompletionError>> + Send + 'a>>
+    ) -> impl Future<Output = Result<CompletionResponse<Self::Response>, CompletionError>> + Send
     {
-        Box::pin(async {
+        async {
             let text = Text { text: "mocked response".to_string() };
             let content = AssistantContent::Text(text);
 
@@ -42,15 +41,15 @@ impl CompletionModel for MockCompletionModel {
                 usage: Usage::default(),
                 raw_response: OneOrMany::one(content),
             })
-        })
+        }
     }
 
-    fn stream<'a>(
-        &'a self,
+    fn stream(
+        &self,
         _request: CompletionRequest,
-    ) -> Pin<Box<dyn Future<Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>> + Send + 'a>>
+    ) -> impl Future<Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>> + Send
     {
-        Box::pin(async { unimplemented!() })
+        async { unimplemented!() }
     }
 }
 

@@ -1,9 +1,8 @@
 //! Core agent logic using the `rig` framework.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
-use rig::completion::{AssistantContent, CompletionModel, Prompt, CompletionResponse};
-use rig::message::Text;
+use rig::completion::{CompletionModel, Prompt};
 
 /// A struct to encapsulate the `rig` agent and its functionality.
 #[allow(dead_code)]
