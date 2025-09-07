@@ -5,7 +5,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.99"
+async-trait = "0.1.89"
 dirs = "6.0.0"
+google-generative-ai-rs = "0.3.4"
+rig-core = "0.19.0"
 rustyline = "17.0.1"
 rustyline-derive = "0.11.1"
 serde = { version = "1.0.219", features = ["derive"] }

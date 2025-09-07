@@ -6,7 +6,6 @@ Based on `prd-repl-app.md`.
 * `repl/Cargo.toml`: Project manifest for the new `repl` crate.
 * `repl/src/main.rs`: Main application entry point and REPL loop.
 * `repl/src/config.rs`: Configuration loading and management.
-* `repl/src/llm/mod.rs`: LLM provider abstraction and implementation.
 * `repl/src/agent.rs`: Core agent logic using the `rig` framework.
 * `repl/src/tools/mod.rs`: Toolset definition for the agent.
 * `repl/src/tools/web_search.rs`: Brave Search API tool implementation.
@@ -31,10 +30,10 @@ Based on `prd-repl-app.md`.
   - [x] **2.5:** Integrate the config loading into `main.rs`.
 
 ## 3. LLM Provider Abstraction
-- [ ] **T3: Implement a flexible LLM provider system.**
-  - [ ] **3.1:** Create an `llm` module with a `LlmProvider` trait.
-  - [ ] **3.2:** Implement a `GeminiProvider` struct that conforms to the trait.
-  - [ ] **3.3:** Implement logic to initialize Gemini using application-default credentials or an API key from the config.
+- [ ] **T3: Use `rig` framework for LLM provider.**
+  - [x] **3.1:** Remove the obsolete `repl/src/llm` module.
+  - [x] **3.2:** Add `rig` crate.
+  - [x] **3.3:** Initialize `rig`'s `GeminiProvider` in `main.rs` using the API key from config.
 
 ## 4. Agent & Tool Integration
 - [ ] **T4: Set up the `rig` agent and integrate tools.**
