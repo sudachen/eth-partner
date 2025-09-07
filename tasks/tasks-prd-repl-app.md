@@ -23,12 +23,12 @@ Based on `prd-repl-app.md`.
   - [x] **1.5:** Implement command handling for `/help` to display a help message.
 
 ## 2. Configuration Management
-- [ ] **T2: Implement configuration loading.**
-  - [ ] **2.1:** Create a `config.rs` module.
-  - [ ] **2.2:** Add dependencies for serialization (`serde`, `serde_json`) and home directory resolution (`dirs`).
-  - [ ] **2.3:** Define a `Config` struct to hold all settings.
-  - [ ] **2.4:** Implement a function to load the configuration from `~/.config/eth-partner/config.json`.
-  - [ ] **2.5:** Integrate the config loading into `main.rs`.
+- [x] **T2: Implement configuration loading.**
+  - [x] **2.1:** Create a `config.rs` module.
+  - [x] **2.2:** Add dependencies for serialization (`serde`, `serde_json`) and home directory resolution (`dirs`).
+  - [x] **2.3:** Define a `Config` struct to hold all settings.
+  - [x] **2.4:** Implement a function to load the configuration from `~/.config/eth-partner/config.json`.
+  - [x] **2.5:** Integrate the config loading into `main.rs`.
 
 ## 3. LLM Provider Abstraction
 - [ ] **T3: Implement a flexible LLM provider system.**

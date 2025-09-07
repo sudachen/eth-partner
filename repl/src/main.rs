@@ -1,12 +1,25 @@
-use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
+mod config;
 
-fn main() -> rustyline::Result<()> {
-    let mut rl = DefaultEditor::new()?;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
+use rustyline::history::DefaultHistory;
+use anyhow::Result;
+
+fn main() -> Result<()> {
+    let config = config::load()?;
+    println!("Loaded config: {:?}", config);
+
+    let mut rl = Editor::<(), DefaultHistory>::new()?;
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
+
     loop {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
+                let _ = rl.add_history_entry(line.as_str());
+                println!("Line: {}", line);
                 let trimmed_line = line.trim();
                 if trimmed_line == "/exit" {
                     break;
@@ -16,7 +29,6 @@ fn main() -> rustyline::Result<()> {
                     println!("  /exit - Exit the application");
                     continue;
                 }
-                println!("Line: {}", line);
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
@@ -32,5 +44,8 @@ fn main() -> rustyline::Result<()> {
             }
         }
     }
+
+    rl.save_history("history.txt")?;
+
     Ok(())
 }
