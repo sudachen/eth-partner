@@ -8,6 +8,7 @@ use thiserror::Error;
 
 // --- Error Type ---
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum WebSearchError {
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
@@ -17,18 +18,21 @@ pub enum WebSearchError {
 
 // --- Argument and Output Structs ---
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 pub struct WebSearchArgs {
     query: String,
 }
 
 // --- Tool Struct ---
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct WebSearchTool {
     client: reqwest::Client,
     api_key: String,
 }
 
 impl WebSearchTool {
+    #[allow(dead_code)]
     pub fn new(api_key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -39,16 +43,19 @@ impl WebSearchTool {
 
 // --- API Response Structs ---
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct BraveSearchResponse {
     web: Option<WebSearchResults>,
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct WebSearchResults {
     results: Vec<SearchResult>,
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct SearchResult {
     title: String,
     url: String,

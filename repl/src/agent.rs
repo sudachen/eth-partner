@@ -1,14 +1,17 @@
 //! Core agent logic using the `rig` framework.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use rig::agent::{Agent, AgentBuilder};
-use rig::completion::{CompletionModel, Prompt};
+use rig::completion::{AssistantContent, CompletionModel, Prompt, CompletionResponse};
+use rig::message::Text;
 
 /// A struct to encapsulate the `rig` agent and its functionality.
+#[allow(dead_code)]
 pub struct ReplAgent<M: CompletionModel> {
     agent: Agent<M>,
 }
 
+#[allow(dead_code)]
 impl<M: CompletionModel> ReplAgent<M> {
     /// Creates a new `ReplAgent` from an `AgentBuilder`.
     pub fn new(builder: AgentBuilder<M>) -> Self {
@@ -19,6 +22,6 @@ impl<M: CompletionModel> ReplAgent<M> {
     /// Runs the agent with a given input and returns the response.
     pub async fn run(&self, input: &str) -> Result<String> {
         let response = self.agent.prompt(input).await?;
-        Ok(response.to_string())
+        Ok(response)
     }
 }

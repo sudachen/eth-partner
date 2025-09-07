@@ -55,6 +55,7 @@ impl Default for WalletServerConfig {
 }
 
 /// Loads the application configuration from the default path.
+#[allow(dead_code)]
 pub fn load() -> Result<Config> {
     let config_path = get_default_config_path()?;
     load_from_path(&config_path)
@@ -63,25 +64,27 @@ pub fn load() -> Result<Config> {
 /// Loads the application configuration from a specific path.
 ///
 /// If the file does not exist, a default configuration is returned.
+#[allow(dead_code)]
 pub fn load_from_path(path: &Path) -> Result<Config> {
     if !path.exists() {
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).with_context(|| "Failed to create config directory")?;
+            fs::create_dir_all(parent)
+                .with_context(|| format!("Failed to create config directory at {:?}", parent))?;
         }
         return Ok(Config::default());
     }
 
-    let config_content = fs::read_to_string(path).with_context(|| "Failed to read config file")?;
+    let config_content = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read config file at {:?}", path))?;
 
-    let config: Config =
-        serde_json::from_str(&config_content).with_context(|| "Failed to parse config file")?;
+    let config: Config = serde_json::from_str(&config_content)
+        .with_context(|| "Failed to parse config file")?;
 
     Ok(config)
 }
 
 /// Returns the default path to the configuration file.
-///
-/// The path is `~/.config/eth-partner/config.json`.
+#[allow(dead_code)]
 fn get_default_config_path() -> Result<PathBuf> {
     let config_dir = dirs::config_dir()
         .context("Failed to find user's config directory")?
