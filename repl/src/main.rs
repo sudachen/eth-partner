@@ -17,8 +17,11 @@ async fn main() -> Result<()> {
     println!("Loaded config: {:?}", config);
 
     // --- Agent Setup ---
-    let agent = if let Some(api_key) = config.llm.google_api_key {
-        std::env::set_var("GEMINI_API_KEY", api_key);
+    // Prioritize API key from environment, then fall back to config file.
+    let api_key = std::env::var("GEMINI_API_KEY").ok().or(config.llm.google_api_key);
+
+    let agent = if let Some(key) = api_key {
+        std::env::set_var("GEMINI_API_KEY", key);
         let client = gemini::Client::from_env();
         println!("Gemini client initialized.");
 
@@ -34,7 +37,7 @@ async fn main() -> Result<()> {
         Some(ReplAgent::new(agent_builder))
     } else {
         println!(
-            "Warning: GEMINI_API_KEY not found in config. LLM functionality will be disabled."
+            "Warning: GEMINI_API_KEY not found in environment or config. LLM functionality will be disabled."
         );
         None
     };
@@ -61,7 +64,7 @@ async fn main() -> Result<()> {
                     }
                 } else {
                     println!(
-                        "LLM agent not initialized. Please set GEMINI_API_KEY in your config."
+                        "LLM agent not initialized. Please set GEMINI_API_KEY in your environment or config."
                     );
                 }
             }
