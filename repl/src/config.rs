@@ -11,6 +11,14 @@ pub struct Config {
     /// LLM provider settings.
     #[serde(default)]
     pub llm: LlmConfig,
+
+    /// Tool settings.
+    #[serde(default)]
+    pub tools: ToolsConfig,
+
+    /// Embedded MCP wallet server settings.
+    #[serde(default)]
+    pub wallet_server: WalletServerConfig,
 }
 
 /// Configuration specific to the LLM provider.
@@ -18,6 +26,32 @@ pub struct Config {
 pub struct LlmConfig {
     /// The Google API key for Gemini.
     pub google_api_key: Option<String>,
+}
+
+/// Configuration for tools.
+#[derive(Deserialize, Debug, Default)]
+pub struct ToolsConfig {
+    /// The Brave Search API key.
+    pub brave_api_key: Option<String>,
+}
+
+/// Configuration for the embedded MCP wallet server.
+#[derive(Deserialize, Debug)]
+#[serde(default)]
+pub struct WalletServerConfig {
+    /// The URL of the Ethereum RPC endpoint.
+    pub rpc_url: String,
+    /// The address to bind the MCP server to.
+    pub listen_address: String,
+}
+
+impl Default for WalletServerConfig {
+    fn default() -> Self {
+        Self {
+            rpc_url: "http://127.0.0.1:8545".to_string(),
+            listen_address: "127.0.0.1:8546".to_string(),
+        }
+    }
 }
 
 /// Loads the application configuration.

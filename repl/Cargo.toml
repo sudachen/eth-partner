@@ -7,9 +7,11 @@ edition = "2021"
 anyhow = "1.0.99"
 async-trait = "0.1.89"
 dirs = "6.0.0"
-google-generative-ai-rs = "0.3.4"
+reqwest = { version = "0.12.23", features = ["json"] }
 rig-core = "0.19.0"
-rustyline = "17.0.1"
+rustyline = { version = "17.0.1", features = ["derive"] }
 rustyline-derive = "0.11.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
+thiserror = "2.0.16"
+tokio = { version = "1.38.1", features = ["sync", "macros", "rt-multi-thread"] }

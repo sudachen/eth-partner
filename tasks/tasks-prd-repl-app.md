@@ -30,18 +30,18 @@ Based on `prd-repl-app.md`.
   - [x] **2.5:** Integrate the config loading into `main.rs`.
 
 ## 3. LLM Provider Abstraction
-- [ ] **T3: Use `rig` framework for LLM provider.**
+- [x] **T3: Use `rig` framework for LLM provider.**
   - [x] **3.1:** Remove the obsolete `repl/src/llm` module.
   - [x] **3.2:** Add `rig` crate.
   - [x] **3.3:** Initialize `rig`'s `GeminiProvider` in `main.rs` using the API key from config.
 
 ## 4. Agent & Tool Integration
 - [ ] **T4: Set up the `rig` agent and integrate tools.**
-  - [ ] **4.1:** Add `rig` as a dependency.
-  - [ ] **4.2:** Create an `agent.rs` module to initialize the `rig` agent and the Re-Act loop.
-  - [ ] **4.3:** Create a `tools` module.
-  - [ ] **4.4:** Implement the `web_search` tool in `tools/web_search.rs` using the Brave Search API.
-  - [ ] **4.5:** Integrate the `mcp-wallet` crate as a tool.
+  - [x] **4.1:** Add `rig` as a dependency.
+  - [x] **4.2:** Create an `agent.rs` module to initialize the `rig` agent and the Re-Act loop.
+  - [x] **4.3:** Create a `tools` module.
+  - [x] **4.4:** Implement the `web_search` tool in `tools/web_search.rs` using the Brave Search API.
+  - [ ] **4.5:** Integrate the `mcp-wallet` crate as an embedded MCP server. (BLOCKED - dependency conflict)
   - [ ] **4.6:** Connect the REPL input (non-commands) to the agent for processing.
 
 ## 5. Finalization & Testing
