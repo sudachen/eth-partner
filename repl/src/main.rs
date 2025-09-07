@@ -5,6 +5,7 @@ mod tools;
 use crate::agent::ReplAgent;
 use crate::tools::web_search::WebSearchTool;
 use anyhow::{Context, Result};
+use dotenvy;
 use rig::client::{CompletionClient, ProviderClient};
 use rig::providers::gemini;
 use rustyline::error::ReadlineError;
@@ -13,6 +14,8 @@ use rustyline::Editor;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenvy::dotenv().ok();
+
     let config = config::load().context("Failed to load configuration")?;
     println!("Loaded config: {:?}", config);
 
