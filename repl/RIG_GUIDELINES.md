@@ -64,3 +64,30 @@ The `rig` crate makes extensive use of asynchronous traits, which can be complex
 ## 4. API and Module Structure
 
 The `rig` crate has a nested module structure, and some components are not part of the public API. When you encounter unresolved import errors, consult the official documentation or the crate's `lib.rs` file to determine the correct public path for a given type. Avoid trying to import from private modules (e.g., `rig::agent::tool`).
+
+## 5. Provider-Specific Configurations
+
+Some LLM providers require specific configuration parameters that are not part of the standard `AgentBuilder` methods. For example, the Gemini provider requires a `generationConfig` object.
+
+To provide these configurations, use the `additional_params` method on the `AgentBuilder`. This method accepts a `serde_json::Value`.
+
+### Example: Gemini `generationConfig`
+
+When using the Gemini provider, you must provide a `generationConfig`. If you don't, you will receive a `JsonError: missing field 'generationConfig'` error from the API.
+
+```rust
+// Example from repl/tests/e2e_tests.rs
+use rig::client::CompletionClient;
+use serde_json::json;
+
+// ...
+
+let agent_builder = client.agent("gemini-1.5-flash-latest").additional_params(json!({
+    "generationConfig": {
+        "temperature": 0.9,
+        "topK": 1,
+        "topP": 1,
+        "maxOutputTokens": 2048,
+        "stopSequences": []
+    }
+}));
