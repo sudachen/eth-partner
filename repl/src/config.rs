@@ -47,6 +47,10 @@ pub struct GenerationConfig {
 pub struct ToolsConfig {
     /// The Brave Search API key.
     pub brave_api_key: Option<String>,
+    /// The Google CSE API key for web search tool.
+    pub google_search_api_key: Option<String>,
+    /// The Google CSE search engine ID (aka `cx`).
+    pub google_search_engine_id: Option<String>,
 }
 
 /// Configuration for the embedded MCP wallet server.
@@ -91,8 +95,8 @@ pub fn load_from_path(path: &Path) -> Result<Config> {
     let config_content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read config file at {:?}", path))?;
 
-    let config: Config = serde_json::from_str(&config_content)
-        .with_context(|| "Failed to parse config file")?;
+    let config: Config =
+        serde_json::from_str(&config_content).with_context(|| "Failed to parse config file")?;
 
     Ok(config)
 }
@@ -109,7 +113,9 @@ fn get_default_config_path() -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{load_from_path, Config, GenerationConfig, LlmConfig, ToolsConfig, WalletServerConfig};
+    use super::{
+        load_from_path, Config, GenerationConfig, LlmConfig, ToolsConfig, WalletServerConfig,
+    };
     use std::fs;
     use tempfile::tempdir;
 
@@ -159,6 +165,8 @@ mod tests {
                 },
                 tools: ToolsConfig {
                     brave_api_key: Some("brave_test_key".to_string()),
+                    google_search_api_key: None,
+                    google_search_engine_id: None,
                 },
                 wallet_server: WalletServerConfig {
                     rpc_url: "http://localhost:1234".to_string(),

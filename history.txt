@@ -2,3 +2,15 @@
 hi!
 /exit
 Say Hi
+Say Hi!
+what tools do yo have?
+what is polets?
+what is poplets?
+exit
+/exit
+what tools do you have
+what the price of Ethereum right now?
+/exit
+What is the capital of France?
+/exit
+Who is the current CEO of Microsoft?

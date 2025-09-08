@@ -22,19 +22,28 @@ async fn test_e2e_gemini_prompt() -> Result<()> {
     dotenvy::dotenv().ok();
 
     // This test requires the GEMINI_API_KEY environment variable to be set.
-    let api_key = std::env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY not set");
+    // If it's not set, we skip the test.
+    let api_key = match std::env::var("GEMINI_API_KEY") {
+        Ok(key) => key,
+        Err(_) => {
+            println!("Skipping test_e2e_gemini_prompt: GEMINI_API_KEY not set");
+            return Ok(());
+        }
+    };
 
     // Initialize a real agent with the Gemini client
     let client = gemini::Client::new(&api_key);
-    let agent_builder = client.agent("gemini-1.5-flash-latest").additional_params(json!({
-        "generationConfig": {
-            "temperature": 0.9,
-            "topK": 1,
-            "topP": 1,
-            "maxOutputTokens": 2048,
-            "stopSequences": []
-        }
-    }));
+    let agent_builder = client
+        .agent("gemini-1.5-flash-latest")
+        .additional_params(json!({
+            "generationConfig": {
+                "temperature": 0.9,
+                "topK": 1,
+                "topP": 1,
+                "maxOutputTokens": 2048,
+                "stopSequences": []
+            }
+        }));
     let agent = Some(ReplAgent::new(agent_builder));
 
     // 1. Send the 'Say Hi' prompt

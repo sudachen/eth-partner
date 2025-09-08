@@ -27,7 +27,9 @@ pub async fn run_repl() -> Result<()> {
 
     // --- Agent Setup ---
     // Prioritize API key from environment, then fall back to config file.
-    let api_key = std::env::var("GEMINI_API_KEY").ok().or(config.llm.google_api_key);
+    let api_key = std::env::var("GEMINI_API_KEY")
+        .ok()
+        .or(config.llm.google_api_key);
 
     let agent = if let Some(key) = api_key {
         std::env::set_var("GEMINI_API_KEY", key);
@@ -53,9 +55,25 @@ pub async fn run_repl() -> Result<()> {
             "generationConfig": generation_config
         }));
 
-        if let Some(brave_api_key) = config.tools.brave_api_key {
-            agent_builder = agent_builder.tool(WebSearchTool::new(brave_api_key));
-            println!("Web search tool initialized.");
+        // Validate Google CSE configuration (without registering yet; see task 2.3)
+        let google_search_api_key = std::env::var("GOOGLE_SEARCH_API_KEY")
+            .ok()
+            .or(config.tools.google_search_api_key);
+        let google_search_engine_id = std::env::var("GOOGLE_SEARCH_ENGINE_ID")
+            .ok()
+            .or(config.tools.google_search_engine_id);
+
+        match (google_search_api_key, google_search_engine_id) {
+            (Some(api_key), Some(_engine_id)) => {
+                // TODO: Pass engine_id to tool once constructor supports it (task 3.1+)
+                agent_builder = agent_builder.tool(WebSearchTool::new(api_key));
+                println!("Web search tool initialized (Google credentials detected).");
+            }
+            _ => {
+                println!(
+                    "Web search tool unavailable: missing GOOGLE_SEARCH_API_KEY and/or GOOGLE_SEARCH_ENGINE_ID."
+                );
+            }
         }
 
         Some(ReplAgent::new(agent_builder))
@@ -98,7 +116,8 @@ pub async fn run_repl() -> Result<()> {
         }
     }
 
-    rl.save_history("history.txt").context("Failed to save REPL history")?;
+    rl.save_history("history.txt")
+        .context("Failed to save REPL history")?;
 
     Ok(())
 }

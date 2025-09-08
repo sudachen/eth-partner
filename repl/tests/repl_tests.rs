@@ -4,7 +4,10 @@ use anyhow::Result;
 use repl::agent::ReplAgent;
 use repl::handle_line;
 use rig::agent::AgentBuilder;
-use rig::completion::{Usage, AssistantContent, CompletionError, CompletionModel, CompletionRequest, CompletionResponse, Message, Prompt, PromptError};
+use rig::completion::{
+    AssistantContent, CompletionError, CompletionModel, CompletionRequest, CompletionResponse,
+    Message, Prompt, PromptError, Usage,
+};
 use rig::message::Text;
 use rig::one_or_many::OneOrMany;
 use rig::streaming::StreamingCompletionResponse;
@@ -33,7 +36,9 @@ impl CompletionModel for MockCompletionModel {
     ) -> impl Future<Output = Result<CompletionResponse<Self::Response>, CompletionError>> + Send
     {
         async {
-            let text = Text { text: "mocked response".to_string() };
+            let text = Text {
+                text: "mocked response".to_string(),
+            };
             let content = AssistantContent::Text(text);
 
             Ok(CompletionResponse {
@@ -47,8 +52,9 @@ impl CompletionModel for MockCompletionModel {
     fn stream(
         &self,
         _request: CompletionRequest,
-    ) -> impl Future<Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>> + Send
-    {
+    ) -> impl Future<
+        Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>,
+    > + Send {
         async { unimplemented!() }
     }
 }
@@ -79,7 +85,9 @@ async fn test_handle_line_prompt_agent() {
 #[tokio::test]
 async fn test_handle_line_no_agent() {
     let agent: Option<ReplAgent<MockCompletionModel>> = None;
-    let output = handle_line("some prompt".to_string(), &agent).await.unwrap();
+    let output = handle_line("some prompt".to_string(), &agent)
+        .await
+        .unwrap();
     assert_eq!(
         output,
         Some(
