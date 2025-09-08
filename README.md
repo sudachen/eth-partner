@@ -1,4 +1,4 @@
-# ETH Partner — Spec‑Driven AI‑Assisted Coding (POC)
+# ETH Partner — Ethereum Ai-Assistant
 
 This repository is an experiment in Spec‑Driven, AI‑assisted development for
 Ethereum workflows. The goal is to explore how an AI assistant can help you
@@ -89,10 +89,10 @@ on your environment.
 High-level view of how the components interact:
 
 ```
-┌────────────────────────────┐        registers tools        ┌──────────────────────┐
-│          repl/            │ ─────────────────────────────▶ │     mcp-wallet/     │
+┌───────────────────────────┐        registers tools        ┌──────────────────────┐
+│          repl/            │ ────────────────────────────▶ │     mcp-wallet/      │
 │  AI Assistant (LLM + UX)  │                               │  MCP-style wallet    │
-│  • natural language input │ ◀───────────────────────────── │  server (stdio IPC)  │
+│  • natural language input │ ◀──────────────────────────── │  server (stdio IPC)  │
 │  • tool orchestration     │        calls tools            └─────────┬────────────┘
 └─────────────┬─────────────┘                                         │
               │                                                       │ JSON-RPC
