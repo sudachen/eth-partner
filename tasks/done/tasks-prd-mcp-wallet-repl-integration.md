@@ -69,11 +69,11 @@
   - [x] 5.2 Cache Rust/Cargo to speed up builds; ensure `cargo test` runs e2e tests.
   - [x] 5.3 Set necessary env vars in CI or within tests for Anvil URL/chain ID.
 
-- [ ] 6.0 Documentation and examples
-  - [ ] 6.1 Update `repl/README.md` with configuration keys and defaults.
-  - [ ] 6.2 Add quick start steps: run REPL, confirm tools listed, run sample transfer.
-  - [ ] 6.3 Add troubleshooting notes (Anvil not found, port conflicts, etc.).
-  - [ ] 6.4 Document security note that this is a PoC; keys in wallet file.
+- [x] 6.0 Documentation and examples
+  - [x] 6.1 Update `repl/README.md` with configuration keys and defaults.
+  - [x] 6.2 Add quick start steps: run REPL, confirm tools listed, run sample transfer.
+  - [x] 6.3 Add troubleshooting notes (Anvil not found, port conflicts, etc.).
+  - [x] 6.4 Document security note that this is a PoC; keys in wallet file.
 
 ## Associated PRD
 
