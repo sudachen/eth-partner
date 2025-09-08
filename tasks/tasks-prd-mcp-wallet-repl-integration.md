@@ -64,10 +64,10 @@
     - [x] 4.2.5 Assert receipt status is success and balances changed as expected.
     - [x] 4.2.6 Ensure proper shutdown of REPL and `anvil`.
 
-- [ ] 5.0 CI workflow updates to install anvil and run tests
-  - [ ] 5.1 Update `.github/workflows/rust.yml` to install Foundry (for `anvil`).
-  - [ ] 5.2 Cache Rust/Cargo to speed up builds; ensure `cargo test` runs e2e tests.
-  - [ ] 5.3 Set necessary env vars in CI or within tests for Anvil URL/chain ID.
+- [x] 5.0 CI workflow updates to install anvil and run tests
+  - [x] 5.1 Update `.github/workflows/rust.yml` to install Foundry (for `anvil`).
+  - [x] 5.2 Cache Rust/Cargo to speed up builds; ensure `cargo test` runs e2e tests.
+  - [x] 5.3 Set necessary env vars in CI or within tests for Anvil URL/chain ID.
 
 - [ ] 6.0 Documentation and examples
   - [ ] 6.1 Update `repl/README.md` with configuration keys and defaults.
