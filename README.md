@@ -89,11 +89,11 @@ on your environment.
 High-level view of how the components interact:
 
 ```
-┌───────────────────────────┐        registers tools        ┌──────────────────────┐
+┌───────────────────────────┐        Ethereum ops           ┌──────────────────────┐
 │          repl/            │ ────────────────────────────▶ │     mcp-wallet/      │
 │  AI Assistant (LLM + UX)  │                               │  MCP-style wallet    │
 │  • natural language input │ ◀──────────────────────────── │  server (stdio IPC)  │
-│  • tool orchestration     │        calls tools            └─────────┬────────────┘
+│  • tool orchestration     │                               └─────────┬────────────┘
 └─────────────┬─────────────┘                                         │
               │                                                       │ JSON-RPC
               │                                                       ▼
