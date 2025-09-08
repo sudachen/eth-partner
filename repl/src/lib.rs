@@ -16,14 +16,31 @@ use rustyline::error::ReadlineError;
 use rustyline::history::DefaultHistory;
 use rustyline::Editor;
 use serde_json::json;
+use tracing::{info, warn};
+use tracing_subscriber::{fmt, EnvFilter};
 
 /// Runs the main REPL loop.
 #[allow(dead_code)]
 pub async fn run_repl() -> Result<()> {
     dotenvy::dotenv().ok();
 
+    // Initialize logging (default to info if RUST_LOG not set)
+    if tracing::subscriber::set_global_default(
+        fmt()
+            .with_env_filter(
+                EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+            )
+            .with_target(false)
+            .finish(),
+    )
+    .is_err()
+    {
+        // If already set by tests or another init, ignore.
+    }
+
     let config = config::load().context("Failed to load configuration")?;
     println!("Loaded config: {:?}", config);
+    info!("Configuration loaded successfully");
 
     // --- Agent Setup ---
     // Prioritize API key from environment, then fall back to config file.
@@ -35,6 +52,7 @@ pub async fn run_repl() -> Result<()> {
         std::env::set_var("GEMINI_API_KEY", key);
         let client = gemini::Client::from_env();
         println!("Gemini client initialized.");
+        info!("Gemini client initialized");
 
         let mut agent_builder = client.agent("gemini-1.5-flash-latest").preamble(
             "You are a helpful AI assistant. Be concise and clear. You have access to a set of tools to help you answer questions.",
@@ -67,11 +85,13 @@ pub async fn run_repl() -> Result<()> {
             (Some(api_key), Some(engine_id)) => {
                 agent_builder = agent_builder.tool(WebSearchTool::new(api_key, engine_id));
                 println!("Web search tool initialized (Google credentials detected).");
+                info!("Web search tool enabled");
             }
             _ => {
                 println!(
                     "Web search tool unavailable: missing GOOGLE_SEARCH_API_KEY and/or GOOGLE_SEARCH_ENGINE_ID."
                 );
+                warn!("Web search tool disabled; missing credentials");
             }
         }
 
@@ -80,6 +100,7 @@ pub async fn run_repl() -> Result<()> {
         println!(
             "Warning: GEMINI_API_KEY not found in environment or config. LLM functionality will be disabled."
         );
+        warn!("GEMINI_API_KEY not found; agent disabled");
         None
     };
 

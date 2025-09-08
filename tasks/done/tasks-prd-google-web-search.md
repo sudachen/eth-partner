@@ -32,14 +32,14 @@
   - [x] 2.3 Wire tool registration in `repl/src/lib.rs` to enable only when both vars are set.
   - [x] 2.4 Update `.env.example` to include both variables with brief descriptions.
 
-- [ ] 3.0 Update `web_search` tool implementation to call Google and map results
+- [x] 3.0 Update `web_search` tool implementation to call Google and map results
   - [x] 3.1 Implement call to `https://www.googleapis.com/customsearch/v1` with params `key`, `cx`, `q`.
   - [x] 3.2 Support optional `num` (default 5, max 10) and set `safe=off` per requirements.
   - [x] 3.3 Parse JSON response and transform to the tool's output structure.
   - [x] 3.4 Handle empty results gracefully (return empty list, not error).
   - [x] 3.5 Add concise logging around queries and response sizes (no sensitive data).
 
-- [ ] 4.0 Testing: add unit tests with mocked HTTP and update e2e tests
+- [x] 4.0 Testing: add unit tests with mocked HTTP and update e2e tests
   - [x] 4.1 Unit test: success scenario parses `title`, `link`, `snippet` correctly.
   - [x] 4.2 Unit test: empty `items` returns empty results.
   - [x] 4.3 Unit test: 4xx/5xx errors return readable error messages with status.

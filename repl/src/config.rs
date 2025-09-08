@@ -2,6 +2,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -19,6 +20,48 @@ pub struct Config {
     /// Embedded MCP wallet server settings.
     #[serde(default)]
     pub wallet_server: WalletServerConfig,
+}
+
+/// Apply environment variables as defaults. Config file values take precedence.
+fn apply_env_defaults(cfg: &mut Config) {
+    // Wallet server env defaults
+    // Only override when current values are defaults (for String) or None (for Option types).
+    if let Ok(v) = env::var("ETH_RPC_URL") {
+        // Treat the compile-time default as a sentinel that may be replaced by env.
+        if cfg.wallet_server.rpc_url == "http://127.0.0.1:8545" {
+            cfg.wallet_server.rpc_url = v;
+        }
+    }
+
+    if let Ok(v) = env::var("CHAIN_ID") {
+        if cfg.wallet_server.chain_id.is_none() {
+            if let Ok(parsed) = v.parse::<u64>() {
+                cfg.wallet_server.chain_id = Some(parsed);
+            }
+        }
+    }
+
+    if let Ok(v) = env::var("WALLET_FILE") {
+        if cfg.wallet_server.wallet_file.is_none() {
+            cfg.wallet_server.wallet_file = Some(PathBuf::from(v));
+        }
+    }
+
+    if let Ok(v) = env::var("GAS_LIMIT") {
+        if cfg.wallet_server.gas_limit.is_none() {
+            if let Ok(parsed) = v.parse::<u64>() {
+                cfg.wallet_server.gas_limit = Some(parsed);
+            }
+        }
+    }
+
+    if let Ok(v) = env::var("GAS_PRICE") {
+        if cfg.wallet_server.gas_price.is_none() {
+            if let Ok(parsed) = v.parse::<u128>() {
+                cfg.wallet_server.gas_price = Some(parsed);
+            }
+        }
+    }
 }
 
 /// Configuration specific to the LLM provider.
@@ -55,16 +98,32 @@ pub struct ToolsConfig {
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(default)]
 pub struct WalletServerConfig {
+    /// Whether to enable the embedded MCP wallet server.
+    pub enable: bool,
     /// The URL of the Ethereum RPC endpoint.
     pub rpc_url: String,
-    /// The address to bind the MCP server to.
+    /// Optional chain ID override to use with the RPC endpoint.
+    pub chain_id: Option<u64>,
+    /// Optional path to the wallet file managed by mcp-wallet.
+    pub wallet_file: Option<PathBuf>,
+    /// Optional gas limit to use for transactions.
+    pub gas_limit: Option<u64>,
+    /// Optional gas price (in wei) to use for transactions.
+    pub gas_price: Option<u128>,
+    /// The address to bind the MCP server to (kept for compatibility; may be unused
+    /// when running in-process/stdio transport).
     pub listen_address: String,
 }
 
 impl Default for WalletServerConfig {
     fn default() -> Self {
         Self {
+            enable: true,
             rpc_url: "http://127.0.0.1:8545".to_string(),
+            chain_id: None,
+            wallet_file: None,
+            gas_limit: None,
+            gas_price: None,
             listen_address: "127.0.0.1:8546".to_string(),
         }
     }
@@ -87,15 +146,18 @@ pub fn load_from_path(path: &Path) -> Result<Config> {
             fs::create_dir_all(parent)
                 .with_context(|| format!("Failed to create config directory at {:?}", parent))?;
         }
-        return Ok(Config::default());
+        let mut cfg = Config::default();
+        apply_env_defaults(&mut cfg);
+        return Ok(cfg);
     }
 
     let config_content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read config file at {:?}", path))?;
 
-    let config: Config =
+    let mut config: Config =
         serde_json::from_str(&config_content).with_context(|| "Failed to parse config file")?;
-
+    // Apply environment variable defaults without overwriting explicit config values.
+    apply_env_defaults(&mut config);
     Ok(config)
 }
 
@@ -117,8 +179,37 @@ mod tests {
     use std::fs;
     use tempfile::tempdir;
 
+    struct EnvGuard {
+        saved: Vec<(&'static str, Option<String>)>,
+    }
+
+    impl EnvGuard {
+        fn new(keys: &[&'static str]) -> Self {
+            let mut saved = Vec::new();
+            for &k in keys {
+                let prev = std::env::var(k).ok();
+                saved.push((k, prev));
+                std::env::remove_var(k);
+            }
+            Self { saved }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            for (k, v) in self.saved.drain(..) {
+                if let Some(val) = v {
+                    std::env::set_var(k, val);
+                } else {
+                    std::env::remove_var(k);
+                }
+            }
+        }
+    }
+
     #[test]
     fn test_load_config_from_file() {
+        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("config.json");
 
@@ -163,7 +254,12 @@ mod tests {
                     google_search_engine_id: None,
                 },
                 wallet_server: WalletServerConfig {
+                    enable: true,
                     rpc_url: "http://localhost:1234".to_string(),
+                    chain_id: None,
+                    wallet_file: None,
+                    gas_limit: None,
+                    gas_price: None,
                     listen_address: "127.0.0.1:5678".to_string(),
                 },
             }
@@ -172,6 +268,7 @@ mod tests {
 
     #[test]
     fn test_load_config_with_generation_config() {
+        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("config.json");
 
@@ -207,6 +304,7 @@ mod tests {
 
     #[test]
     fn test_load_default_config_if_not_exists() {
+        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("non_existent_config.json");
 
