@@ -22,9 +22,9 @@ pub enum WebSearchError {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct WebSearchArgs {
-    query: String,
+    pub query: String,
     #[serde(default)]
-    num: Option<u8>,
+    pub num: Option<u8>,
 }
 
 // --- Tool Struct ---
@@ -45,13 +45,19 @@ impl WebSearchTool {
             default_num: 5,
         }
     }
+
+    /// Public helper to construct a tool with a custom base URL (primarily for tests).
+    pub fn new_with_endpoint(api_key: String, engine_id: String, base_url: String) -> Self {
+        let client = reqwest::Client::new();
+        let google = GoogleCseClient::with_base_url(client, api_key, engine_id, base_url);
+        Self {
+            google,
+            default_num: 5,
+        }
+    }
 }
 
 // (Removed Brave/generic response structs; using Google DTOs below)
-
-// --- Google CSE Client and DTOs ---
-#[allow(dead_code)]
-const GOOGLE_CSE_ENDPOINT: &str = "https://www.googleapis.com/customsearch/v1";
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -59,6 +65,7 @@ struct GoogleCseClient {
     client: reqwest::Client,
     api_key: String,
     cx: String,
+    base_url: String,
 }
 
 #[allow(dead_code)]
@@ -68,6 +75,21 @@ impl GoogleCseClient {
             client,
             api_key,
             cx,
+            base_url: "https://www.googleapis.com/customsearch/v1".to_string(),
+        }
+    }
+
+    fn with_base_url(
+        client: reqwest::Client,
+        api_key: String,
+        cx: String,
+        base_url: String,
+    ) -> Self {
+        Self {
+            client,
+            api_key,
+            cx,
+            base_url,
         }
     }
 
@@ -77,7 +99,7 @@ impl GoogleCseClient {
     fn build_request(&self, q: &str, num: Option<u8>) -> reqwest::RequestBuilder {
         let mut req = self
             .client
-            .get(GOOGLE_CSE_ENDPOINT)
+            .get(&self.base_url)
             .query(&[
                 ("key", self.api_key.as_str()),
                 ("cx", self.cx.as_str()),
@@ -86,7 +108,7 @@ impl GoogleCseClient {
             .query(&[("safe", "off")]);
 
         if let Some(n) = num {
-            let capped = n.min(10).max(1);
+            let capped = n.clamp(1, 10);
             req = req.query(&[("num", capped.to_string())]);
         }
 
@@ -104,9 +126,9 @@ struct GoogleSearchResponse {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 struct GoogleSearchItem {
-    title: String,
-    link: String,
-    snippet: String,
+    title: Option<String>,
+    link: Option<String>,
+    snippet: Option<String>,
 }
 
 // --- Mappers ---
@@ -116,17 +138,25 @@ fn format_google_results(items: &[GoogleSearchItem], limit: usize) -> String {
         return "No web results found.".to_string();
     }
 
-    items
-        .iter()
-        .take(limit)
-        .map(|it| {
-            format!(
+    let mut formatted: Vec<String> = Vec::new();
+    for it in items.iter() {
+        if let (Some(title), Some(link)) = (&it.title, &it.link) {
+            let snippet = it.snippet.as_deref().unwrap_or("");
+            formatted.push(format!(
                 "Title: {}\nURL: {}\nSnippet: {}\n",
-                it.title, it.link, it.snippet
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n---\n")
+                title, link, snippet
+            ));
+        }
+        if formatted.len() >= limit {
+            break;
+        }
+    }
+
+    if formatted.is_empty() {
+        "No web results found.".to_string()
+    } else {
+        formatted.join("\n---\n")
+    }
 }
 
 // --- Tool Trait Implementation ---
@@ -140,7 +170,7 @@ impl Tool for WebSearchTool {
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         ToolDefinition {
             name: Self::NAME.to_string(),
-            description: "Searches the web for a given query. Use this for questions about current events, recent information, or topics that may have changed since the model's last training."
+            description: "Searches the web for a given query and returns JSON with { total, results:[{index,title,url,snippet}], provider }. Use for up-to-date info."
                 .to_string(),
             parameters: json!({
                 "type": "object",
@@ -163,6 +193,12 @@ impl Tool for WebSearchTool {
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         let requested = args.num.unwrap_or(self.default_num);
+        // Log query length and requested num (avoid logging full query content)
+        println!(
+            "web_search: query_len={}, requested_num={}",
+            args.query.len(),
+            requested
+        );
         let response = self
             .google
             .build_request(&args.query, Some(requested))
@@ -187,11 +223,35 @@ impl Tool for WebSearchTool {
             .await
             .map_err(|e| WebSearchError::Parse(e.to_string()))?;
 
-        let items = match search_response.items {
-            Some(items) => items,
-            None => return Ok("No web results found.".to_string()),
-        };
+        let items = search_response.items.unwrap_or_default();
 
-        Ok(format_google_results(&items, self.default_num as usize))
+        // Build JSON output expected by the agent
+        let mut results = Vec::new();
+        let mut idx: usize = 1;
+        for it in items.iter() {
+            if let (Some(title), Some(link)) = (&it.title, &it.link) {
+                let snippet = it.snippet.clone().unwrap_or_default();
+                results.push(json!({
+                    "index": idx,
+                    "title": title,
+                    "url": link,
+                    "snippet": snippet,
+                }));
+                idx += 1;
+                if idx > self.default_num as usize {
+                    break;
+                }
+            }
+        }
+
+        println!("web_search: results_count={}", results.len());
+
+        let out = json!({
+            "total": results.len(),
+            "results": results,
+            "provider": "google_cse"
+        });
+
+        Ok(out.to_string())
     }
 }

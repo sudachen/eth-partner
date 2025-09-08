@@ -45,8 +45,6 @@ pub struct GenerationConfig {
 /// Configuration for tools.
 #[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct ToolsConfig {
-    /// The Brave Search API key.
-    pub brave_api_key: Option<String>,
     /// The Google CSE API key for web search tool.
     pub google_search_api_key: Option<String>,
     /// The Google CSE search engine ID (aka `cx`).
@@ -136,9 +134,6 @@ mod tests {
                     "stopSequences": ["stop"]
                 }
             },
-            "tools": {
-                "brave_api_key": "brave_test_key"
-            },
             "wallet_server": {
                 "rpc_url": "http://localhost:1234",
                 "listen_address": "127.0.0.1:5678"
@@ -164,7 +159,6 @@ mod tests {
                     })
                 },
                 tools: ToolsConfig {
-                    brave_api_key: Some("brave_test_key".to_string()),
                     google_search_api_key: None,
                     google_search_engine_id: None,
                 },
