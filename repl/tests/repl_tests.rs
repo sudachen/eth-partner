@@ -1,4 +1,5 @@
 //! Integration tests for the REPL application.
+#![allow(clippy::manual_async_fn)]
 
 use anyhow::Result;
 use repl::agent::ReplAgent;

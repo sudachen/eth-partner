@@ -82,6 +82,13 @@ struct GetTxInfoParams {
     transaction_hash: String,
 }
 
+/// Parameters for the `eth_getTransactionReceipt` tool.
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct GetTxReceiptParams {
+    /// The transaction hash as a hex-encoded string.
+    transaction_hash: String,
+}
+
 /// Parameters for the `eth_transferEth` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct TransferEthParams {
@@ -126,6 +133,43 @@ impl WalletHandler {
             .create_account(params.0.alias.as_deref().unwrap_or(""))
             .map_err(to_internal_error)?;
         let result = json!({ "address": format!("0x{:x}", address) });
+        Ok(CallToolResult::structured(result))
+    }
+
+    /// Gets a transaction receipt by its hash.
+    #[tool(description = "Gets a transaction receipt by its hash.")]
+    async fn eth_get_transaction_receipt(
+        &self,
+        params: Parameters<GetTxReceiptParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let tx_hash = H256::from_str(
+            params
+                .0
+                .transaction_hash
+                .strip_prefix("0x")
+                .unwrap_or(&params.0.transaction_hash),
+        )
+        .map_err(|e| to_invalid_params_error(e.to_string()))?;
+
+        let receipt_opt = self
+            .eth_client
+            .get_transaction_receipt(tx_hash)
+            .await
+            .map_err(to_internal_error)?;
+
+        let result = if let Some(rcpt) = receipt_opt {
+            let status_num = rcpt.status.map(|s| s.as_u64()).unwrap_or(0);
+            let status_text = if status_num == 1 { "success" } else { "failed" };
+            json!({
+                "found": true,
+                "status": status_text,
+                "block_number": rcpt.block_number.map(|b| b.as_u64()),
+                "transaction_hash": format!("0x{:x}", rcpt.transaction_hash),
+            })
+        } else {
+            json!({ "found": false, "status": "pending" })
+        };
+
         Ok(CallToolResult::structured(result))
     }
 

@@ -209,7 +209,13 @@ mod tests {
 
     #[test]
     fn test_load_config_from_file() {
-        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
+        let _guard = EnvGuard::new(&[
+            "ETH_RPC_URL",
+            "CHAIN_ID",
+            "WALLET_FILE",
+            "GAS_LIMIT",
+            "GAS_PRICE",
+        ]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("config.json");
 
@@ -268,7 +274,13 @@ mod tests {
 
     #[test]
     fn test_load_config_with_generation_config() {
-        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
+        let _guard = EnvGuard::new(&[
+            "ETH_RPC_URL",
+            "CHAIN_ID",
+            "WALLET_FILE",
+            "GAS_LIMIT",
+            "GAS_PRICE",
+        ]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("config.json");
 
@@ -304,7 +316,13 @@ mod tests {
 
     #[test]
     fn test_load_default_config_if_not_exists() {
-        let _guard = EnvGuard::new(&["ETH_RPC_URL", "CHAIN_ID", "WALLET_FILE", "GAS_LIMIT", "GAS_PRICE"]);
+        let _guard = EnvGuard::new(&[
+            "ETH_RPC_URL",
+            "CHAIN_ID",
+            "WALLET_FILE",
+            "GAS_LIMIT",
+            "GAS_PRICE",
+        ]);
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("non_existent_config.json");
 

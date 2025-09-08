@@ -7,6 +7,7 @@ pub mod tools;
 
 use crate::agent::ReplAgent;
 use crate::config::GenerationConfig;
+use crate::tools::mcp_wallet::{start_mcp_wallet_server, McpWalletTool, ServerShutdown};
 use crate::tools::web_search::WebSearchTool;
 use anyhow::{Context, Result};
 use rig::client::{CompletionClient, ProviderClient};
@@ -38,9 +39,54 @@ pub async fn run_repl() -> Result<()> {
         // If already set by tests or another init, ignore.
     }
 
+    /// Starts the embedded mcp-wallet server from the provided config and returns
+    /// both a shutdown handle and an initialized RMCP client connected to it.
+    ///
+    /// This mirrors the REPL startup path so tests can verify REPL integration
+    /// without entering the interactive loop.
+    pub async fn start_mcp_wallet_and_client(
+        config: &config::Config,
+    ) -> Result<(
+        crate::tools::mcp_wallet::ServerShutdown,
+        rmcp::service::RunningService<rmcp::RoleClient, ()>,
+    )> {
+        use crate::tools::mcp_wallet::start_mcp_wallet_server;
+
+        let handle = start_mcp_wallet_server(config).await?;
+        let (client_stream, shutdown) = handle.into_client_stream();
+        let client = rmcp::serve_client((), client_stream).await?;
+        Ok((shutdown, client))
+    }
+
     let config = config::load().context("Failed to load configuration")?;
     println!("Loaded config: {:?}", config);
     info!("Configuration loaded successfully");
+
+    // --- Optional: Start embedded mcp-wallet MCP server ---
+    let mut wallet_shutdown: Option<ServerShutdown> = None;
+    let mut mcp_wallet_tool: Option<McpWalletTool> = None;
+    if config.wallet_server.enable {
+        match start_mcp_wallet_server(&config).await {
+            Ok(handle) => {
+                // Build RMCP client from the client stream and construct the pass-through tool
+                let (client_stream, shutdown) = handle.into_client_stream();
+                wallet_shutdown = Some(shutdown);
+                match rmcp::serve_client((), client_stream).await {
+                    Ok(client) => {
+                        mcp_wallet_tool = Some(McpWalletTool::new(client));
+                        info!("mcp-wallet server started (in-process) and client initialized");
+                    }
+                    Err(e) => {
+                        return Err(e).context("Failed to initialize RMCP client for mcp-wallet");
+                    }
+                }
+            }
+            Err(e) => {
+                // Per PRD: fail REPL startup on server failure (PoC behavior)
+                return Err(e).context("Failed to start embedded mcp-wallet server");
+            }
+        }
+    }
 
     // --- Agent Setup ---
     // Prioritize API key from environment, then fall back to config file.
@@ -95,6 +141,15 @@ pub async fn run_repl() -> Result<()> {
             }
         }
 
+        // Register MCP wallet tool if available
+        if let Some(wallet_tool) = mcp_wallet_tool {
+            agent_builder = agent_builder.tool(wallet_tool);
+            info!("MCP wallet tool registered");
+        } else if config.wallet_server.enable {
+            // If enabled but tool not available, log a warning (shouldn't happen due to fail-fast above)
+            warn!("MCP wallet tool not available despite enable=true");
+        }
+
         Some(ReplAgent::new(agent_builder))
     } else {
         println!(
@@ -139,6 +194,11 @@ pub async fn run_repl() -> Result<()> {
     rl.save_history("history.txt")
         .context("Failed to save REPL history")?;
 
+    // Gracefully stop embedded mcp-wallet server on exit
+    if let Some(shutdown) = wallet_shutdown {
+        shutdown.shutdown();
+    }
+
     Ok(())
 }
 
@@ -159,7 +219,7 @@ pub async fn handle_line<M: CompletionModel + Send + Sync>(
     if let Some(ref agent) = agent {
         match agent.run(&line).await {
             Ok(response) => Ok(Some(format!("Response: {}\n", response))),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     } else {
         Ok(Some(

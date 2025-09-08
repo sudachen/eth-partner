@@ -5,7 +5,7 @@
 use crate::prelude::*;
 use ethers::{
     providers::{Http, Middleware, Provider},
-    types::{Address, Bytes, Transaction, H256},
+    types::{Address, Bytes, Transaction, TransactionReceipt, H256},
     utils::format_ether,
 };
 use std::str::FromStr;
@@ -124,5 +124,23 @@ impl EthClient {
     pub async fn get_transaction_info(&self, tx_hash: H256) -> Result<Option<Transaction>> {
         let tx_info = self.provider.get_transaction(tx_hash).await?;
         Ok(tx_info)
+    }
+
+    /// Gets the transaction receipt by its hash.
+    ///
+    /// # Arguments
+    ///
+    /// * `tx_hash` - The hash of the transaction to query.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing an `Option<TransactionReceipt>` or a `WalletError`.
+    /// The option will be `None` if the receipt is not yet available.
+    pub async fn get_transaction_receipt(
+        &self,
+        tx_hash: H256,
+    ) -> Result<Option<TransactionReceipt>> {
+        let receipt = self.provider.get_transaction_receipt(tx_hash).await?;
+        Ok(receipt)
     }
 }
