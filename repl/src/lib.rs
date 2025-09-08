@@ -64,9 +64,8 @@ pub async fn run_repl() -> Result<()> {
             .or(config.tools.google_search_engine_id);
 
         match (google_search_api_key, google_search_engine_id) {
-            (Some(api_key), Some(_engine_id)) => {
-                // TODO: Pass engine_id to tool once constructor supports it (task 3.1+)
-                agent_builder = agent_builder.tool(WebSearchTool::new(api_key));
+            (Some(api_key), Some(engine_id)) => {
+                agent_builder = agent_builder.tool(WebSearchTool::new(api_key, engine_id));
                 println!("Web search tool initialized (Google credentials detected).");
             }
             _ => {

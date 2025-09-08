@@ -23,46 +23,31 @@ pub enum WebSearchError {
 #[allow(dead_code)]
 pub struct WebSearchArgs {
     query: String,
+    #[serde(default)]
+    num: Option<u8>,
 }
 
 // --- Tool Struct ---
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct WebSearchTool {
-    client: reqwest::Client,
-    api_key: String,
+    google: GoogleCseClient,
+    default_num: u8,
 }
 
 impl WebSearchTool {
     #[allow(dead_code)]
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: String, engine_id: String) -> Self {
+        let client = reqwest::Client::new();
+        let google = GoogleCseClient::new(client, api_key, engine_id);
         Self {
-            client: reqwest::Client::new(),
-            api_key,
+            google,
+            default_num: 5,
         }
     }
 }
 
-// --- API Response Structs (generic) ---
-#[derive(Deserialize, Debug)]
-#[allow(dead_code)]
-struct SearchResponse {
-    web: Option<SearchResults>,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(dead_code)]
-struct SearchResults {
-    results: Vec<SearchResult>,
-}
-
-#[derive(Deserialize, Debug)]
-#[allow(dead_code)]
-struct SearchResult {
-    title: String,
-    url: String,
-    description: String,
-}
+// (Removed Brave/generic response structs; using Google DTOs below)
 
 // --- Google CSE Client and DTOs ---
 #[allow(dead_code)]
@@ -163,6 +148,12 @@ impl Tool for WebSearchTool {
                     "query": {
                         "type": "string",
                         "description": "The search query."
+                    },
+                    "num": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10,
+                        "description": "Optional number of results to return (1..10). Defaults to 5."
                     }
                 },
                 "required": ["query"]
@@ -171,12 +162,10 @@ impl Tool for WebSearchTool {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+        let requested = args.num.unwrap_or(self.default_num);
         let response = self
-            .client
-            .get("https://api.search.brave.com/res/v1/web/search")
-            .header("Accept", "application/json")
-            .header("X-Subscription-Token", &self.api_key)
-            .query(&[("q", &args.query)])
+            .google
+            .build_request(&args.query, Some(requested))
             .send()
             .await?;
 
@@ -193,28 +182,16 @@ impl Tool for WebSearchTool {
             return Err(WebSearchError::Api { status, message });
         }
 
-        let search_response: SearchResponse = response
+        let search_response: GoogleSearchResponse = response
             .json()
             .await
             .map_err(|e| WebSearchError::Parse(e.to_string()))?;
 
-        let results = match search_response.web {
-            Some(web) => web.results,
+        let items = match search_response.items {
+            Some(items) => items,
             None => return Ok("No web results found.".to_string()),
         };
 
-        let formatted_results = results
-            .iter()
-            .take(5) // Limit to 5 results to avoid overwhelming the context window
-            .map(|result| {
-                format!(
-                    "Title: {}\nURL: {}\nDescription: {}\n",
-                    result.title, result.url, result.description
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n---\n");
-
-        Ok(formatted_results)
+        Ok(format_google_results(&items, self.default_num as usize))
     }
 }

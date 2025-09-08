@@ -13,12 +13,11 @@ use rig::providers::gemini;
 use serde_json::json;
 
 #[tokio::test]
-#[ignore]
 async fn test_e2e_web_search() -> Result<()> {
     // Load environment variables from .env file
     dotenvy::dotenv().ok();
 
-    // This test requires both GEMINI_API_KEY and BRAVE_API_KEY to be set.
+    // This test requires GEMINI_API_KEY, GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID to be set.
     // If they are not set, we skip the test.
     let gemini_api_key = match std::env::var("GEMINI_API_KEY") {
         Ok(key) => key,
@@ -27,10 +26,17 @@ async fn test_e2e_web_search() -> Result<()> {
             return Ok(());
         }
     };
-    let brave_api_key = match std::env::var("BRAVE_API_KEY") {
+    let google_search_api_key = match std::env::var("GOOGLE_SEARCH_API_KEY") {
         Ok(key) => key,
         Err(_) => {
-            println!("Skipping test_e2e_web_search: BRAVE_API_KEY not set");
+            println!("Skipping test_e2e_web_search: GOOGLE_SEARCH_API_KEY not set");
+            return Ok(());
+        }
+    };
+    let google_search_engine_id = match std::env::var("GOOGLE_SEARCH_ENGINE_ID") {
+        Ok(id) => id,
+        Err(_) => {
+            println!("Skipping test_e2e_web_search: GOOGLE_SEARCH_ENGINE_ID not set");
             return Ok(());
         }
     };
@@ -48,7 +54,10 @@ async fn test_e2e_web_search() -> Result<()> {
                 "stopSequences": []
             }
         }))
-        .tool(WebSearchTool::new(brave_api_key));
+        .tool(WebSearchTool::new(
+            google_search_api_key,
+            google_search_engine_id,
+        ));
 
     let agent = Some(ReplAgent::new(agent_builder));
 

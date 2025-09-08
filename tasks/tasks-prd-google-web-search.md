@@ -19,7 +19,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Replace Brave integration with Google CSE client
+- [x] 1.0 Replace Brave integration with Google CSE client
   - [x] 1.1 Audit `repl/src/tools/web_search.rs` for Brave-specific code (endpoints, params, models).
   - [x] 1.2 Remove Brave-specific request/response models and constants.
   - [x] 1.3 Introduce a Google CSE client layer (request builder + response DTOs with `serde`).
@@ -30,11 +30,11 @@
   - [x] 2.1 Add `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` to `repl/src/config.rs`.
   - [x] 2.2 Validate presence of both variables; surface a clear "tool unavailable" state if missing.
   - [x] 2.3 Wire tool registration in `repl/src/lib.rs` to enable only when both vars are set.
-  - [ ] 2.4 Update `.env.example` to include both variables with brief descriptions.
+  - [x] 2.4 Update `.env.example` to include both variables with brief descriptions.
 
 - [ ] 3.0 Update `web_search` tool implementation to call Google and map results
-  - [ ] 3.1 Implement call to `https://www.googleapis.com/customsearch/v1` with params `key`, `cx`, `q`.
-  - [ ] 3.2 Support optional `num` (default 5, max 10) and set `safe=off` per requirements.
+  - [x] 3.1 Implement call to `https://www.googleapis.com/customsearch/v1` with params `key`, `cx`, `q`.
+  - [x] 3.2 Support optional `num` (default 5, max 10) and set `safe=off` per requirements.
   - [ ] 3.3 Parse JSON response and transform to the tool's output structure.
   - [ ] 3.4 Handle empty results gracefully (return empty list, not error).
   - [ ] 3.5 Add concise logging around queries and response sizes (no sensitive data).
