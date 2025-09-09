@@ -1,6 +1,8 @@
 # ETH Partner — Ethereum Ai-Assistant
 
-This repository is an experiment in Spec‑Driven, AI‑assisted development for Ethereum workflows. The goal is to explore how an AI assistant can help you reason about, test, and execute on‑chain actions end‑to‑end, from natural language prompts to concrete JSON‑RPC calls and signed transactions.
+This repository is a living experiment in automated (Spec-Driven) software creation, where 100% of the code and documentation is written by AI agents. The goal is to explore how an AI assistant can help you reason about, test, and execute on‑chain actions end‑to‑end, from natural language prompts to concrete JSON‑RPC calls and signed transactions.
+
+ 
 
 At a glance:
 - Proof‑of‑Concept (POC), not production software.
