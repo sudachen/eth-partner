@@ -1,9 +1,15 @@
 # ETH Partner — Ethereum Ai-Assistant
 
-This repository is an experiment in Spec‑Driven, AI‑assisted development for
-Ethereum workflows. The goal is to explore how an AI assistant can help you
-reason about, test, and execute on‑chain actions end‑to‑end, from natural
-language prompts to concrete JSON‑RPC calls and signed transactions.
+🤖 AI-Generated Ethereum Chat-style Assistant
+
+This repository is a living experiment in automated software creation, where 100% of the code and documentation is written by AI agents. Our research focuses on building and integrating next-generation systems.
+
+Core Areas of Exploration:
+- 🧠 Agentic Systems: Designing and deploying autonomous agents that can reason, plan, and execute complex tasks.
+- 🔮 Specification-Driven Development: Generating functional code from high-level requirements and "vibes," moving beyond traditional programming.
+- 📚 Retrieval-Augmented Generation (RAG): Enhancing language models with external, dynamic knowledge bases.
+- 🔗 Multi-Agent Coordination Protocols (MCP): Developing protocols for effective communication and collaboration between multiple AI agents.
+- ⛓️ Ethereum Integration: Building and testing applications that interact with the Ethereum blockchain and smart contracts.
 
 At a glance:
 - Proof‑of‑Concept (POC), not production software.
