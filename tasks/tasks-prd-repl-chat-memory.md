@@ -29,7 +29,7 @@
   - [x] 3.3 In `handle_command`, add a match arm for `/clear_history` that clears the history vector.
   - [x] 3.4 In `run_repl`, update the call to `handle_command` to pass the history.
 
-- [ ] 4.0 Modify the `ReplAgent` to use the history when prompting the LLM.
+- [x] 4.0 Modify the `ReplAgent` to use the history when prompting the LLM.
   - [x] 4.1 In `agent.rs`, modify the `ReplAgent::run` method to prepend the existing history to the new user prompt before sending it to the model.
   - [x] 4.2 In `main.rs`, ensure the `agent.run()` call is updated if its signature changed.
 
