@@ -150,18 +150,26 @@ async fn test_import_private_key_adds_and_upgrades_via_mcp() {
     let pk = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
     args.insert("private_key".to_string(), json!(pk));
     let _ = client
-        .call_tool(CallToolRequestParam { name: "import_private_key".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "import_private_key".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("import_private_key should succeed");
 
     // Confirm signing account exists
     let list_accounts_result = client
-        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .call_tool(CallToolRequestParam {
+            name: "list_accounts".into(),
+            arguments: None,
+        })
         .await
         .expect("list_accounts should succeed");
     let accounts_value = list_accounts_result.structured_content.unwrap();
     let accounts: Vec<Value> = serde_json::from_value(accounts_value).unwrap();
-    assert!(accounts.iter().any(|a| a["is_signing"].as_bool() == Some(true)));
+    assert!(accounts
+        .iter()
+        .any(|a| a["is_signing"].as_bool() == Some(true)));
 
     // Case B: set_alias first to create watch-only, then import same key to upgrade
     // Use a different known key
@@ -179,13 +187,19 @@ async fn test_import_private_key_adds_and_upgrades_via_mcp() {
     args.insert("address".to_string(), json!(addr2));
     args.insert("alias".to_string(), json!(alias2));
     let _ = client
-        .call_tool(CallToolRequestParam { name: "set_alias".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "set_alias".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("set_alias should succeed");
 
     // Confirm it's watch-only before import
     let list_accounts_result = client
-        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .call_tool(CallToolRequestParam {
+            name: "list_accounts".into(),
+            arguments: None,
+        })
         .await
         .expect("list_accounts should succeed");
     let accounts_value = list_accounts_result.structured_content.unwrap();
@@ -201,13 +215,19 @@ async fn test_import_private_key_adds_and_upgrades_via_mcp() {
     let mut args = Map::new();
     args.insert("private_key".to_string(), json!(pk2));
     let _ = client
-        .call_tool(CallToolRequestParam { name: "import_private_key".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "import_private_key".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("import_private_key should succeed");
 
     // Confirm upgraded to signing
     let list_accounts_result = client
-        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .call_tool(CallToolRequestParam {
+            name: "list_accounts".into(),
+            arguments: None,
+        })
         .await
         .expect("list_accounts should succeed");
     let accounts_value = list_accounts_result.structured_content.unwrap();
