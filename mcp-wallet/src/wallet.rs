@@ -19,7 +19,8 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     /// Private key in hex format.
-    pub private_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub private_key: Option<String>,
     /// The next nonce to be used for a transaction.
     pub nonce: u64,
     /// List of aliases associated with this account.
@@ -28,9 +29,18 @@ pub struct Account {
 
 impl Account {
     /// Creates a new account from a private key.
-    pub fn new(private_key: String) -> Self {
+    pub fn new_with_private_key(private_key: String) -> Self {
         Self {
-            private_key,
+            private_key: Some(private_key),
+            nonce: 0,
+            aliases: Vec::new(),
+        }
+    }
+
+    /// Creates a new watch-only account (no private key stored).
+    pub fn new_watch_only() -> Self {
+        Self {
+            private_key: None,
             nonce: 0,
             aliases: Vec::new(),
         }
@@ -60,10 +70,17 @@ impl Wallet {
 
     /// Gets the signer for an account by its address.
     pub fn get_signer(&self, address: &Address) -> Result<LocalWallet, WalletError> {
-        self.accounts
-            .get(address)
-            .and_then(|acc| LocalWallet::from_str(&acc.private_key).ok())
-            .ok_or_else(|| WalletError::AccountNotFound(*address))
+        if let Some(acc) = self.accounts.get(address) {
+            if let Some(pk_hex) = &acc.private_key {
+                LocalWallet::from_str(pk_hex)
+                    .map_err(|e| WalletError::InvalidPrivateKey(e.to_string()))
+            } else {
+                // Watch-only account: no signer available
+                Err(WalletError::SignerNotFound(format!("0x{:x}", address)))
+            }
+        } else {
+            Err(WalletError::AccountNotFound(*address))
+        }
     }
 
     /// Creates a new account with a random private key and adds it to the wallet.
@@ -90,7 +107,7 @@ impl Wallet {
         }
 
         let private_key = hex::encode(wallet.signer().to_bytes());
-        let mut account = Account::new(private_key);
+        let mut account = Account::new_with_private_key(private_key);
 
         if !alias.is_empty() {
             self.add_alias_to_account(&mut account, alias, address)?;
@@ -111,12 +128,18 @@ impl Wallet {
             return Err(WalletError::AliasAlreadyExists(alias));
         }
 
+        // Ensure account exists; if not, create a watch-only account
+        self.accounts
+            .entry(address)
+            .or_insert_with(Account::new_watch_only);
+
         if let Some(account) = self.accounts.get_mut(&address) {
             self.aliases.insert(alias.clone(), address);
             account.aliases.push(alias);
             self.mark_dirty();
             Ok(())
         } else {
+            // This should not happen as we inserted above when missing
             Err(WalletError::AccountNotFound(address))
         }
     }

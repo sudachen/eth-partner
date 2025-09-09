@@ -2,6 +2,7 @@
 
 use crate::{eth_client::EthClient, wallet::Wallet, WalletError};
 use ethers::types::{Address, H256, U256};
+use ethers::utils::to_checksum;
 use rmcp::{
     handler::server::{tool::ToolRouter, wrapper::Parameters},
     model::{CallToolResult, ErrorData},
@@ -132,7 +133,7 @@ impl WalletHandler {
         let address = wallet
             .create_account(params.0.alias.as_deref().unwrap_or(""))
             .map_err(to_internal_error)?;
-        let result = json!({ "address": format!("0x{:x}", address) });
+        let result = json!({ "address": to_checksum(&address, None) });
         Ok(CallToolResult::structured(result))
     }
 
@@ -181,7 +182,7 @@ impl WalletHandler {
         let json_accounts: Vec<_> = accounts
             .into_iter()
             .map(|(address, account)| {
-                json!({ "address": format!("0x{:x}", address), "nonce": account.nonce, "aliases": account.aliases })
+                json!({ "address": to_checksum(&address, None), "nonce": account.nonce, "aliases": account.aliases })
             })
             .collect();
         let result = serde_json::to_value(json_accounts).map_err(to_internal_error)?;

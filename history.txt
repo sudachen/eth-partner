@@ -14,3 +14,14 @@ what the price of Ethereum right now?
 What is the capital of France?
 /exit
 Who is the current CEO of Microsoft?
+Alice is 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Bob is 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+What is Alice's ETH balance?
+use mcp_wallet to set alias of Alice as 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+use mcp_wallet to import accaount  0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+what accounts i have in wallet
+what is ballance of 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D?
+what is ballance of 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266?
+i wnat generate transaction to send 1 eth from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+i wnat generate transaction to send 1 eth from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 on the current chain
+/exit
