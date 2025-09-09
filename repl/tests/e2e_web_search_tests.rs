@@ -60,12 +60,12 @@ async fn test_e2e_web_search() -> Result<()> {
             google_search_engine_id,
         ));
 
-    let agent = Some(ReplAgent::new(agent_builder));
+    let mut agent = Some(ReplAgent::new(agent_builder));
 
     // Send a directive prompt that forces returning the web_search tool JSON verbatim
     let response = handle_line(
         "Use the web_search tool to find the current CEO of Microsoft.".to_string(),
-        &agent,
+        &mut agent,
     )
     .await?;
 

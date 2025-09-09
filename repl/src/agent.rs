@@ -24,12 +24,40 @@ impl<M: CompletionModel> ReplAgent<M> {
     /// Creates a new `ReplAgent` from an `AgentBuilder`.
     pub fn new(builder: AgentBuilder<M>) -> Self {
         let agent = builder.build();
-        Self { agent, history: Vec::new() }
+        Self {
+            agent,
+            history: Vec::new(),
+        }
     }
 
     /// Runs the agent with a given input and returns the response.
     pub async fn run(&self, input: &str) -> Result<String> {
-        let response = self.agent.prompt(input).await?;
+        // Build a single prompt string that includes the existing conversation history
+        // followed by the new user input. This provides the model with the necessary
+        // context to generate a coherent response.
+        let mut prompt_text = String::new();
+
+        for msg in &self.history {
+            match msg.role.as_str() {
+                "user" => {
+                    prompt_text.push_str("User: ");
+                }
+                "assistant" => {
+                    prompt_text.push_str("Assistant: ");
+                }
+                other => {
+                    prompt_text.push_str(other);
+                    prompt_text.push_str(": ");
+                }
+            }
+            prompt_text.push_str(&msg.content);
+            prompt_text.push('\n');
+        }
+
+        prompt_text.push_str("User: ");
+        prompt_text.push_str(input);
+
+        let response = self.agent.prompt(&prompt_text).await?;
         Ok(response)
     }
 }

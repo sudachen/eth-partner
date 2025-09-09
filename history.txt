@@ -25,3 +25,16 @@ what is ballance of 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266?
 i wnat generate transaction to send 1 eth from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 i wnat generate transaction to send 1 eth from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 on the current chain
 /exit
+import private key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+Alis is 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+Alis is 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Bob is 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+send 1 eth from Alis to Bob
+list accounts
+what address has Alis?
+use mcp-wallet tools to find address associated with alias
+what address has Alice?
+what address has Bob?
+use mcp-wallet lools and say me what address has Bob?
+use mcp-wallet lools and send 1 eth from Alice to Bob
+/exit

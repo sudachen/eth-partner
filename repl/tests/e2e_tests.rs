@@ -44,17 +44,17 @@ async fn test_e2e_gemini_prompt() -> Result<()> {
                 "stopSequences": []
             }
         }));
-    let agent = Some(ReplAgent::new(agent_builder));
+    let mut agent = Some(ReplAgent::new(agent_builder));
 
     // 1. Send the 'Say Hi' prompt
-    let response = handle_line("Say Hi".to_string(), &agent).await?;
+    let response = handle_line("Say Hi".to_string(), &mut agent).await?;
 
     // 3. Assert that the response contains 'Hi'
     let output = response.expect("Expected a response from the agent");
     assert!(output.contains("Hi"), "Response did not contain 'Hi'");
 
     // 4. Send the '/exit' command
-    let exit_response = handle_line("/exit".to_string(), &agent).await?;
+    let exit_response = handle_line("/exit".to_string(), &mut agent).await?;
 
     // 5. Assert that the application signals to exit
     assert!(exit_response.is_none(), "Expected None to signal exit");

@@ -94,15 +94,15 @@ pub async fn run_repl() -> Result<()> {
         .ok()
         .or(config.llm.google_api_key);
 
-    let agent = if let Some(key) = api_key {
+    let mut agent = if let Some(key) = api_key {
         std::env::set_var("GEMINI_API_KEY", key);
         let client = gemini::Client::from_env();
         println!("Gemini client initialized.");
         info!("Gemini client initialized");
 
-        let mut agent_builder = client.agent("gemini-1.5-flash-latest").preamble(
-            include_str!("../../system-prompt.md"),
-        );
+        let mut agent_builder = client
+            .agent("gemini-1.5-flash-latest")
+            .preamble(include_str!("../../system-prompt.md"));
 
         let generation_config = config.llm.generation_config.unwrap_or_else(|| {
             println!("Using default generation config");
@@ -170,10 +170,26 @@ pub async fn run_repl() -> Result<()> {
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
-                match handle_line(line, &agent).await {
-                    Ok(Some(output)) => println!("{}", output),
-                    Ok(None) => break, // Exit command
-                    Err(e) => eprintln!("Error: {:#?}", e),
+                if line.starts_with('/') {
+                    // Route commands to handle_command and pass mutable history
+                    let mut empty_history = Vec::new();
+                    let result = if let Some(ref mut agent) = agent {
+                        handle_command(&line, &mut agent.history)
+                    } else {
+                        handle_command(&line, &mut empty_history)
+                    };
+
+                    match result {
+                        Ok(Some(output)) => println!("{}", output),
+                        Ok(None) => break, // Exit command
+                        Err(e) => eprintln!("Error: {:#?}", e),
+                    }
+                } else {
+                    match handle_line(line, &mut agent).await {
+                        Ok(Some(output)) => println!("{}", output),
+                        Ok(None) => break, // Exit command
+                        Err(e) => eprintln!("Error: {:#?}", e),
+                    }
                 }
             }
             Err(ReadlineError::Interrupted) => {
@@ -208,7 +224,7 @@ pub async fn run_repl() -> Result<()> {
 #[allow(dead_code)]
 pub async fn handle_line<M: CompletionModel + Send + Sync>(
     line: String,
-    agent: &Option<ReplAgent<M>>,
+    agent: &mut Option<ReplAgent<M>>,
 ) -> Result<Option<String>> {
     if line == "/exit" {
         return Ok(None);
@@ -216,9 +232,19 @@ pub async fn handle_line<M: CompletionModel + Send + Sync>(
         return Ok(Some("Commands: /exit, /help".to_string()));
     }
 
-    if let Some(ref agent) = agent {
+    if let Some(ref mut agent) = agent {
+        agent.history.push(crate::agent::ChatMessage {
+            role: "user".to_string(),
+            content: line.clone(),
+        });
         match agent.run(&line).await {
-            Ok(response) => Ok(Some(format!("Response: {}\n", response))),
+            Ok(response) => {
+                agent.history.push(crate::agent::ChatMessage {
+                    role: "assistant".to_string(),
+                    content: response.clone(),
+                });
+                Ok(Some(format!("Response: {}\n", response)))
+            }
             Err(e) => Err(e),
         }
     } else {
@@ -226,5 +252,59 @@ pub async fn handle_line<M: CompletionModel + Send + Sync>(
             "LLM agent not initialized. Please set GEMINI_API_KEY in your environment or config."
                 .to_string(),
         ))
+    }
+}
+
+/// Handles a command entered by the user.
+///
+/// This function currently supports a minimal set of commands and is
+/// intentionally introduced to accept a mutable reference to the chat
+/// history as required by the PRD tasks. Future subtasks will extend it
+/// to implement `/show_history` and `/clear_history` behaviors.
+///
+/// Returns `Ok(Some(String))` with output, `Ok(None)` to signal exit, or
+/// `Err` on error.
+#[allow(dead_code)]
+pub fn handle_command(
+    command: &str,
+    _history: &mut Vec<crate::agent::ChatMessage>,
+) -> Result<Option<String>> {
+    match command {
+        "/exit" => Ok(None),
+        "/help" => Ok(Some(
+            "Commands: /exit, /help, /show_history, /clear_history".to_string(),
+        )),
+        "/show_history" => {
+            if _history.is_empty() {
+                return Ok(Some("History is empty.".to_string()));
+            }
+
+            let mut out = String::new();
+            for msg in _history.iter() {
+                match msg.role.as_str() {
+                    "user" => {
+                        out.push_str("> ");
+                        out.push_str("User: ");
+                    }
+                    "assistant" => {
+                        out.push_str("< ");
+                        out.push_str("Assistant: ");
+                    }
+                    other => {
+                        out.push_str("~ ");
+                        out.push_str(other);
+                        out.push_str(": ");
+                    }
+                }
+                out.push_str(&msg.content);
+                out.push('\n');
+            }
+            Ok(Some(out))
+        }
+        "/clear_history" => {
+            _history.clear();
+            Ok(Some("History cleared.".to_string()))
+        }
+        _ => Ok(Some(format!("Unknown command: {}", command))),
     }
 }

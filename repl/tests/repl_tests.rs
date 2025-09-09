@@ -62,31 +62,31 @@ impl CompletionModel for MockCompletionModel {
 
 #[tokio::test]
 async fn test_handle_line_help_command() {
-    let agent: Option<ReplAgent<MockCompletionModel>> = None;
-    let output = handle_line("/help".to_string(), &agent).await.unwrap();
+    let mut agent: Option<ReplAgent<MockCompletionModel>> = None;
+    let output = handle_line("/help".to_string(), &mut agent).await.unwrap();
     assert_eq!(output, Some("Commands: /exit, /help".to_string()));
 }
 
 #[tokio::test]
 async fn test_handle_line_exit_command() {
-    let agent: Option<ReplAgent<MockCompletionModel>> = None;
-    let output = handle_line("/exit".to_string(), &agent).await.unwrap();
+    let mut agent: Option<ReplAgent<MockCompletionModel>> = None;
+    let output = handle_line("/exit".to_string(), &mut agent).await.unwrap();
     assert_eq!(output, None);
 }
 
 #[tokio::test]
 async fn test_handle_line_prompt_agent() {
     let agent_builder = AgentBuilder::new(MockCompletionModel);
-    let agent = Some(ReplAgent::new(agent_builder));
+    let mut agent = Some(ReplAgent::new(agent_builder));
 
-    let output = handle_line("hello".to_string(), &agent).await.unwrap();
+    let output = handle_line("hello".to_string(), &mut agent).await.unwrap();
     assert_eq!(output, Some("Response: mocked response\n".to_string()));
 }
 
 #[tokio::test]
 async fn test_handle_line_no_agent() {
-    let agent: Option<ReplAgent<MockCompletionModel>> = None;
-    let output = handle_line("some prompt".to_string(), &agent)
+    let mut agent: Option<ReplAgent<MockCompletionModel>> = None;
+    let output = handle_line("some prompt".to_string(), &mut agent)
         .await
         .unwrap();
     assert_eq!(
