@@ -126,3 +126,64 @@ async fn test_mcp_client_workflow() {
     // 8. Shutdown
     client.cancel().await.unwrap();
 }
+
+#[tokio::test]
+async fn test_import_private_key_validation_errors() {
+    // Setup server and client over in-memory transport
+    let (client_stream, server_stream) = duplex(1024);
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
+
+    let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet, server_eth_client)
+            .serve(server_stream)
+            .await
+            .unwrap();
+        server.waiting().await.unwrap();
+    });
+
+    let client = serve_client((), client_stream).await.unwrap();
+
+    // Too short
+    let mut args = Map::new();
+    args.insert("private_key".to_string(), json!("0x1234"));
+    let res = client
+        .call_tool(rmcp::model::CallToolRequestParam {
+            name: "import_private_key".into(),
+            arguments: Some(args),
+        })
+        .await;
+    assert!(res.is_err(), "expected error for short private key");
+
+    // Non-hex
+    let mut args = Map::new();
+    args.insert(
+        "private_key".to_string(),
+        json!("0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"),
+    );
+    let res = client
+        .call_tool(rmcp::model::CallToolRequestParam {
+            name: "import_private_key".into(),
+            arguments: Some(args),
+        })
+        .await;
+    assert!(res.is_err(), "expected error for non-hex private key");
+
+    // All zeros
+    let mut args = Map::new();
+    args.insert(
+        "private_key".to_string(),
+        json!("0000000000000000000000000000000000000000000000000000000000000000"),
+    );
+    let res = client
+        .call_tool(rmcp::model::CallToolRequestParam {
+            name: "import_private_key".into(),
+            arguments: Some(args),
+        })
+        .await;
+    assert!(res.is_err(), "expected error for all-zero private key");
+
+    client.cancel().await.unwrap();
+}

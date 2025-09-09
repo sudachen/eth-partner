@@ -1,4 +1,5 @@
 use ethers::core::types::{Address, U256};
+use ethers::signers::{LocalWallet, Signer};
 use mcp_wallet::{error::WalletError, transaction::TransactionBuilder, wallet::Wallet};
 
 fn create_test_wallet() -> Wallet {
@@ -10,6 +11,66 @@ fn create_test_wallet() -> Wallet {
         )
         .unwrap();
     wallet
+}
+
+#[test]
+fn test_get_signer_errors_on_watch_only_account() {
+    let mut wallet = Wallet::new();
+    let addr = Address::random();
+
+    // Create watch-only by aliasing unknown address
+    wallet.add_alias(addr, "wo_signer".to_string()).unwrap();
+
+    // Attempt to get signer should fail with SignerNotFound
+    let res = wallet.get_signer(&addr);
+    assert!(matches!(res, Err(WalletError::SignerNotFound(_))));
+}
+
+#[test]
+fn test_import_upgrades_watch_only_to_signing() {
+    let mut wallet = Wallet::new();
+    let pk = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+    let addr = pk.parse::<LocalWallet>().unwrap().address();
+
+    // Create watch-only by aliasing unknown address
+    let alias = "wo".to_string();
+    wallet.add_alias(addr, alias.clone()).unwrap();
+
+    // Verify watch-only state before import
+    let (acc_before, _) = wallet.get_account(&alias).unwrap();
+    assert!(acc_before.private_key.is_none());
+    let nonce_before = acc_before.nonce;
+
+    // Import the matching private key; should upgrade
+    let returned_addr = wallet.import_private_key(pk, "").unwrap();
+    assert_eq!(returned_addr, addr);
+
+    // Verify upgraded to signing and nonce preserved
+    let (acc_after, resolved_addr) = wallet.get_account(&alias).unwrap();
+    assert_eq!(resolved_addr, addr);
+    assert!(acc_after.private_key.is_some());
+    assert_eq!(acc_after.nonce, nonce_before);
+}
+
+#[test]
+fn test_alias_unknown_address_creates_watch_only() {
+    let mut wallet = Wallet::new();
+    let addr = Address::random();
+    let alias = "watchonly".to_string();
+
+    // Alias an address that does not exist yet
+    wallet.add_alias(addr, alias.clone()).unwrap();
+
+    // Ensure alias resolves to the address
+    let (_, resolved_addr) = wallet.get_account(&alias).expect("alias must resolve");
+    assert_eq!(resolved_addr, addr);
+
+    // Ensure the created account is watch-only (no private key)
+    let (account, _) = wallet.get_account(&format!("0x{:x}", addr)).unwrap();
+    assert!(account.private_key.is_none(), "expected watch-only account");
+
+    // Wallet should be marked dirty due to mutation
+    assert!(wallet.is_dirty());
 }
 
 #[test]

@@ -44,12 +44,12 @@
   - [x] 4.3 Ensure `list_accounts` reflects watch-only vs signing state in response
   - [x] 4.4 Update server info/instructions minimally if needed
 
-- [ ] 5.0 Add unit tests for wallet logic (alias + import scenarios)
-  - [ ] 5.1 Aliasing an unknown address creates a watch-only account
-  - [ ] 5.2 Importing a private key creates a signing account if absent
-  - [ ] 5.3 Import upgrades an existing watch-only account to signing
-  - [ ] 5.4 `get_signer` errors on watch-only accounts
-  - [ ] 5.5 Private key validation rejects invalid lengths/hex
+- [x] 5.0 Add unit tests for wallet logic (alias + import scenarios)
+  - [x] 5.1 Aliasing an unknown address creates a watch-only account
+  - [x] 5.2 Importing a private key creates a signing account if absent
+  - [x] 5.3 Import upgrades an existing watch-only account to signing
+  - [x] 5.4 `get_signer` errors on watch-only accounts
+  - [x] 5.5 Private key validation rejects invalid lengths/hex
 
 - [ ] 6.0 Add integration tests for MCP tools (alias + import)
   - [ ] 6.1 `set_alias` creates watch-only when account missing (MCP call)
