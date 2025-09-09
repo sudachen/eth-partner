@@ -9,6 +9,9 @@
 - `mcp-wallet/tests/eth_client_tests.rs` - RPC-related tests.
 - `repl/src/tools/mcp_wallet.rs` - REPL tool wrappers for MCP Wallet tools.
 - `repl/tests/e2e_mcp_wallet_tests.rs` - E2E tests executing wallet flows via REPL.
+- `repl/tests/e2e_alias_watch_only_tests.rs` - E2E: aliasing unknown address creates watch-only.
+- `repl/tests/e2e_import_private_key_tests.rs` - E2E: importing private key creates signing account.
+- `repl/README.md` - Updated docs with alias/import examples and validation notes.
 
 ### Notes
 
@@ -51,20 +54,20 @@
   - [x] 5.4 `get_signer` errors on watch-only accounts
   - [x] 5.5 Private key validation rejects invalid lengths/hex
 
-- [ ] 6.0 Add integration tests for MCP tools (alias + import)
-  - [ ] 6.1 `set_alias` creates watch-only when account missing (MCP call)
-  - [ ] 6.2 `import_private_key` adds or upgrades accounts (MCP call)
-  - [ ] 6.3 `list_accounts` shows aliases and indicates signing vs watch-only
+- [x] 6.0 Add integration tests for MCP tools (alias + import)
+  - [x] 6.1 `set_alias` creates watch-only when account missing (MCP call)
+  - [x] 6.2 `import_private_key` adds or upgrades accounts (MCP call)
+  - [x] 6.3 `list_accounts` shows aliases and indicates signing vs watch-only
 
-- [ ] 7.0 Add E2E tests in REPL for alias and import flows
-  - [ ] 7.1 REPL invokes `set_alias` on unknown address then confirms via `list_accounts`
-  - [ ] 7.2 REPL invokes `import_private_key` then confirms signing capability
-  - [ ] 7.3 Ensure no regressions in existing E2E tests
+- [x] 7.0 Add E2E tests in REPL for alias and import flows
+  - [x] 7.1 REPL invokes `set_alias` on unknown address then confirms via `list_accounts`
+  - [x] 7.2 REPL invokes `import_private_key` then confirms signing capability
+  - [x] 7.3 Ensure no regressions in existing E2E tests
 
-- [ ] 8.0 Documentation updates (README and examples) and finalize
-  - [ ] 8.1 Update `mcp-wallet/README.md` with new flows and examples
-  - [ ] 8.2 Update `repl/README.md` examples if needed
-  - [ ] 8.3 Add notes on validation and watch-only semantics
+- [x] 8.0 Documentation updates (README and examples) and finalize
+  - [x] 8.1 Update `mcp-wallet/README.md` with new flows and examples
+  - [x] 8.2 Update `repl/README.md` examples if needed
+  - [x] 8.3 Add notes on validation and watch-only semantics
 
 ## Associated PRD
 

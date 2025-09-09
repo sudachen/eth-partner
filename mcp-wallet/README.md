@@ -9,6 +9,10 @@ This server is designed to be a component in a larger system, where other tools 
 - **`rmcp` Compliant**: Interacts via a standardized, robust stdio protocol.
 - **Account Management**: Generate new Ethereum accounts.
 - **Alias System**: Assign human-readable aliases to addresses for easier reference.
+- **Watch-only Accounts**: Setting an alias for an unknown address auto-creates a watch-only
+  account (no private key stored).
+- **Private Key Import**: Import a 32-byte secp256k1 private key (0x or raw hex). If a watch-only
+  account with the same address exists, it is upgraded to a signing account.
 - **EIP-1559 Transactions**: Create and sign modern, EIP-1559 compliant transactions.
 - **JSON-Based Storage**: Wallet data is stored in a simple, human-readable JSON file (`~/.mcp-wallet.json` by default).
 
@@ -80,14 +84,15 @@ The server exposes the following tools that can be called by an `rmcp` client.
 
 **Example Response**:
 ```json
-{"id":2,"result":{"type":"structured","content":[{"address":"0x...","aliases":["main_account"],"nonce":0}]}}
+{"id":2,"result":{"type":"structured","content":[{"address":"0x...","aliases":["main_account"],"nonce":0,"is_signing":true}]}}
 ```
 
 ---
 
 ### `set_alias`
 
-**Description**: Sets an alias for an Ethereum account.
+**Description**: Sets an alias for an Ethereum account. If the address is not present in the
+wallet, a watch-only account is created automatically.
 
 **Parameters**:
 - `address` (string): The Ethereum address to which the alias will be assigned.
@@ -101,6 +106,31 @@ The server exposes the following tools that can be called by an `rmcp` client.
 **Example Response**:
 ```json
 {"id":3,"result":{"type":"structured","content":null}}
+```
+
+---
+
+### `import_private_key`
+
+**Description**: Imports a private key to create or upgrade an account.
+
+**Behavior**:
+- Accepts `private_key` as 0x-prefixed or raw hex string with exactly 64 hex characters.
+- If the derived address is not present, a new signing account is created.
+- If a watch-only account with the same address exists, it is upgraded to a signing account.
+- If a signing account already exists, the server returns a duplicate account error.
+
+**Parameters**:
+- `private_key` (string): 32-byte secp256k1 private key (0x or raw hex).
+
+**Example Request**:
+```json
+{"id":7,"method":"call_tool","params":{"name":"import_private_key","arguments":{"private_key":"0x..."}}}
+```
+
+**Example Response**:
+```json
+{"id":7,"result":{"type":"structured","content":{"address":"0x..."}}}
 ```
 
 ---
@@ -146,3 +176,16 @@ The server exposes the following tools that can be called by an `rmcp` client.
 **Example Response**:
 ```json
 {"id":5,"result":{"type":"structured","content":{"hash":"0x...","raw_transaction":"0x...",...}}}
+```
+
+## Address Formatting and Validation
+
+- Input addresses are parsed and validated; responses return addresses in EIP-55 checksum format.
+- Private key input is minimally validated for correct hex length and non-zero value; full curve
+  checks are performed by the signer library.
+
+## Watch-only Accounts
+
+- A watch-only account is stored without a private key and cannot sign transactions.
+- They are created automatically when `set_alias` targets an unknown address.
+- `list_accounts` includes an `is_signing` boolean to indicate whether a private key is present.

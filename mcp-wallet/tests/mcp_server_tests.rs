@@ -128,6 +128,101 @@ async fn test_mcp_client_workflow() {
 }
 
 #[tokio::test]
+async fn test_import_private_key_adds_and_upgrades_via_mcp() {
+    let (client_stream, server_stream) = duplex(1024);
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
+
+    let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet, server_eth_client)
+            .serve(server_stream)
+            .await
+            .unwrap();
+        server.waiting().await.unwrap();
+    });
+
+    let client = serve_client((), client_stream).await.unwrap();
+
+    // Case A: Import a private key to add a new signing account
+    let mut args = Map::new();
+    let pk = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+    args.insert("private_key".to_string(), json!(pk));
+    let _ = client
+        .call_tool(CallToolRequestParam { name: "import_private_key".into(), arguments: Some(args) })
+        .await
+        .expect("import_private_key should succeed");
+
+    // Confirm signing account exists
+    let list_accounts_result = client
+        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .await
+        .expect("list_accounts should succeed");
+    let accounts_value = list_accounts_result.structured_content.unwrap();
+    let accounts: Vec<Value> = serde_json::from_value(accounts_value).unwrap();
+    assert!(accounts.iter().any(|a| a["is_signing"].as_bool() == Some(true)));
+
+    // Case B: set_alias first to create watch-only, then import same key to upgrade
+    // Use a different known key
+    let pk2 = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+    // Derive its address locally to set alias. The service accepts hex string, so we pass hex addr.
+    // For simplicity in this integration test, compute checksum address via ethers formatting at runtime
+    // but we don't have direct to_checksum here; we'll call wallet locally then alias that address string.
+    let addr2 = {
+        use ethers::signers::{LocalWallet, Signer};
+        let w = pk2.parse::<LocalWallet>().unwrap();
+        format!("0x{:x}", w.address())
+    };
+    let alias2 = "mcp_upgrade";
+    let mut args = Map::new();
+    args.insert("address".to_string(), json!(addr2));
+    args.insert("alias".to_string(), json!(alias2));
+    let _ = client
+        .call_tool(CallToolRequestParam { name: "set_alias".into(), arguments: Some(args) })
+        .await
+        .expect("set_alias should succeed");
+
+    // Confirm it's watch-only before import
+    let list_accounts_result = client
+        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .await
+        .expect("list_accounts should succeed");
+    let accounts_value = list_accounts_result.structured_content.unwrap();
+    let accounts: Vec<Value> = serde_json::from_value(accounts_value).unwrap();
+    assert!(accounts.iter().any(|a| {
+        let empty: Vec<Value> = Vec::new();
+        let aliases = a["aliases"].as_array().unwrap_or(&empty);
+        let has_alias = aliases.iter().any(|v| v.as_str() == Some(alias2));
+        has_alias && a["is_signing"].as_bool() == Some(false)
+    }));
+
+    // Import pk2 to upgrade
+    let mut args = Map::new();
+    args.insert("private_key".to_string(), json!(pk2));
+    let _ = client
+        .call_tool(CallToolRequestParam { name: "import_private_key".into(), arguments: Some(args) })
+        .await
+        .expect("import_private_key should succeed");
+
+    // Confirm upgraded to signing
+    let list_accounts_result = client
+        .call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None })
+        .await
+        .expect("list_accounts should succeed");
+    let accounts_value = list_accounts_result.structured_content.unwrap();
+    let accounts: Vec<Value> = serde_json::from_value(accounts_value).unwrap();
+    assert!(accounts.iter().any(|a| {
+        let empty: Vec<Value> = Vec::new();
+        let aliases = a["aliases"].as_array().unwrap_or(&empty);
+        let has_alias = aliases.iter().any(|v| v.as_str() == Some(alias2));
+        has_alias && a["is_signing"].as_bool() == Some(true)
+    }));
+
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
 async fn test_import_private_key_validation_errors() {
     // Setup server and client over in-memory transport
     let (client_stream, server_stream) = duplex(1024);

@@ -177,6 +177,69 @@ Notes:
 - `eth_get_transaction_info` — fetches transaction by hash.
 - `eth_get_transaction_receipt` — fetches transaction receipt and status.
 
+#### Example: alias an unknown address (creates watch-only)
+
+When you alias an address that is not yet in the wallet, a watch-only account
+is created automatically. You can verify via `list_accounts` that
+`is_signing` is `false` for that entry.
+
+Programmatic outline using the RMCP client handle `client`:
+
+```rust
+use rmcp::model::CallToolRequestParam;
+use serde_json::{json, Map, Value};
+
+// Set alias for an unknown address (Anvil[1] example)
+let mut args = Map::new();
+args.insert("address".to_string(), json!("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"));
+args.insert("alias".to_string(), json!("watch_only_alias"));
+client.call_tool(CallToolRequestParam { name: "set_alias".into(), arguments: Some(args) }).await?;
+
+// Verify is_signing is false
+let listed = client.call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None }).await?;
+let accounts: Vec<Value> = serde_json::from_value(listed.structured_content.unwrap())?;
+let found = accounts.iter().any(|a| {
+    let aliases = a["aliases"].as_array().unwrap_or(&vec![]);
+    let has_alias = aliases.iter().any(|v| v.as_str() == Some("watch_only_alias"));
+    let is_signing = a["is_signing"].as_bool().unwrap_or(true);
+    has_alias && !is_signing
+});
+assert!(found);
+```
+
+See E2E: `repl/tests/e2e_alias_watch_only_tests.rs`.
+
+#### Example: import private key (creates signing account)
+
+Importing a valid 32-byte (0x or raw hex) private key will create a signing
+account if it doesn't exist yet, or upgrade an existing watch-only account.
+
+```rust
+use rmcp::model::CallToolRequestParam;
+use serde_json::{json, Map, Value};
+
+// Import Anvil[0] private key
+let mut args = Map::new();
+args.insert("private_key".to_string(), json!("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"));
+client.call_tool(CallToolRequestParam { name: "import_private_key".into(), arguments: Some(args) }).await?;
+
+// Verify a signing account exists
+let listed = client.call_tool(CallToolRequestParam { name: "list_accounts".into(), arguments: None }).await?;
+let accounts: Vec<Value> = serde_json::from_value(listed.structured_content.unwrap())?;
+assert!(accounts.iter().any(|a| a["is_signing"].as_bool().unwrap_or(false)));
+```
+
+See E2E: `repl/tests/e2e_import_private_key_tests.rs`.
+
+### Validation and semantics
+
+- Addresses: inputs are validated, outputs are returned in EIP-55 checksum format.
+- Private keys: accept 0x-prefixed or raw hex; require exactly 64 hex chars,
+  and reject all-zero keys. Curve validity is enforced by the signer.
+- Aliases: must be 1–20 ASCII letters, digits, or underscore; aliases are unique.
+- Watch-only: created when aliasing an unknown address; cannot sign; surfaced
+  via `is_signing: false` in `list_accounts`.
+
 ### Running local E2E with Anvil
 
 The test suite includes end-to-end tests that start Foundry's `anvil` and
@@ -231,7 +294,9 @@ cargo test
    - Verify the recipient balance increased via `eth_get_balance`.
 
 For a complete example, inspect the E2E test in
-`repl/tests/e2e_mcp_wallet_tests.rs`.
+`repl/tests/e2e_mcp_wallet_tests.rs`, and the additional flows in
+`repl/tests/e2e_alias_watch_only_tests.rs` and
+`repl/tests/e2e_import_private_key_tests.rs`.
 
 ## Troubleshooting
 
