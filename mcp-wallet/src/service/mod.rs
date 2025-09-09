@@ -131,6 +131,13 @@ struct TransferEthParams {
     chain_id: u64,
 }
 
+/// Parameters for the `resolve_alias` tool.
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct ResolveAliasParams {
+    /// The alias to resolve to an address (case-insensitive).
+    alias: String,
+}
+
 /// The service handler for the wallet.
 #[derive(Clone)]
 pub struct WalletHandler {
@@ -340,6 +347,24 @@ impl WalletHandler {
             .map_err(to_internal_error)?;
         let result = json!({ "balance_eth": balance });
         Ok(CallToolResult::structured(result))
+    }
+
+    /// Resolves an alias to a checksummed address (case-insensitive).
+    #[tool(description = "Resolves an alias to a checksummed address (case-insensitive).")]
+    async fn resolve_alias(
+        &self,
+        params: Parameters<ResolveAliasParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let wallet = self.wallet.lock().await;
+        if let Some(address) = wallet.resolve_alias_case_insensitive(&params.0.alias) {
+            let result = json!({ "address": to_checksum(&address, None) });
+            Ok(CallToolResult::structured(result))
+        } else {
+            Err(to_invalid_params_error(format!(
+                "Alias not found: {}",
+                params.0.alias
+            )))
+        }
     }
 
     /// Sends a signed transaction to the network.

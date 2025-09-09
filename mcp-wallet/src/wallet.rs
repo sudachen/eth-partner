@@ -194,6 +194,21 @@ impl Wallet {
             .and_then(|&addr| self.accounts.get(&addr).map(|acc| (acc, addr)))
     }
 
+    /// Resolves an alias ignoring case and returns the mapped address if found.
+    ///
+    /// This does not alter storage or validation; it scans the alias map and
+    /// compares lowercased values to support case-insensitive lookup.
+    pub fn resolve_alias_case_insensitive(&self, alias: &str) -> Option<Address> {
+        let needle = alias.to_ascii_lowercase();
+        self.aliases.iter().find_map(|(k, &addr)| {
+            if k.to_ascii_lowercase() == needle {
+                Some(addr)
+            } else {
+                None
+            }
+        })
+    }
+
     /// Lists all accounts in the wallet.
     pub fn list_accounts(&self) -> Vec<(Address, &Account)> {
         self.accounts
