@@ -1,7 +1,7 @@
 //! Integration tests for the fully compliant MCP Wallet Server.
 
-use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet};
 use ethers::utils::to_checksum;
+use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet};
 use rmcp::{model::CallToolRequestParam, serve_client, service::ServiceExt};
 use serde_json::{json, Map, Value};
 use std::sync::Arc;
@@ -151,16 +151,25 @@ async fn test_resolve_alias_local_only_no_network() {
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("NoNetAlias"));
     let res = client
-        .call_tool(CallToolRequestParam { name: "new_account".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "new_account".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("new_account should succeed");
-    let _addr = res.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let _addr = res.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     // Resolve should succeed even though EthClient endpoint is non-routable
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("nonetalias"));
     let resolved = client
-        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "resolve_alias".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("resolve_alias should succeed locally");
     let content = resolved.structured_content.unwrap();
@@ -231,24 +240,39 @@ async fn test_resolve_alias_success() {
         })
         .await
         .expect("new_account should succeed");
-    let addr = res.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let addr = res.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     // Resolve with different casing
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("alice"));
     let resolved1 = client
-        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "resolve_alias".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("resolve_alias should succeed");
-    let r1 = resolved1.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let r1 = resolved1.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("ALICE"));
     let resolved2 = client
-        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "resolve_alias".into(),
+            arguments: Some(args),
+        })
         .await
         .expect("resolve_alias should succeed");
-    let r2 = resolved2.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let r2 = resolved2.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     // The addresses should match and be in checksum format
     assert_eq!(r1, r2);

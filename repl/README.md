@@ -195,6 +195,49 @@ Notes:
 - `eth_get_transaction_info` — fetches transaction by hash.
 - `eth_get_transaction_receipt` — fetches transaction receipt and status.
 
+#### Aliases and address resolution
+
+The REPL supports using aliases anywhere an address is expected. Behind the
+scenes, it uses the wallet server's `resolve_alias` tool to map an alias to an
+EIP-55 checksummed address.
+
+Notes:
+
+- Case-insensitive: `"Alice"`, `"alice"`, and `"ALICE"` are treated the same
+- Local-only: no ENS or external lookup; aliases are stored in the wallet JSON
+- Errors: unknown aliases return a clear MCP error
+
+Example (programmatic outline using an RMCP client handle `client`):
+
+```rust
+use rmcp::model::CallToolRequestParam;
+use serde_json::{json, Map, Value};
+
+// Create an account with alias "alice"
+let mut args = Map::new();
+args.insert("alias".to_string(), json!("alice"));
+let _ = client
+    .call_tool(CallToolRequestParam { name: "new_account".into(), arguments: Some(args) })
+    .await?;
+
+// Resolve alias (case-insensitive)
+let mut args = Map::new();
+args.insert("alias".to_string(), json!("ALICE"));
+let res = client
+    .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+    .await?;
+let addr = res.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+
+// Use alias directly in tools that require an address
+let mut bargs = Map::new();
+bargs.insert("address".to_string(), json!("alice"));
+let bal = client
+    .call_tool(CallToolRequestParam { name: "eth_get_balance".into(), arguments: Some(bargs) })
+    .await?;
+let bal_json: Value = bal.structured_content.unwrap_or(Value::Null);
+assert!(bal_json["balance_eth"].is_string());
+```
+
 #### Example: alias an unknown address (creates watch-only)
 
 When you alias an address that is not yet in the wallet, a watch-only account

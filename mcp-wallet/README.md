@@ -128,6 +128,28 @@ wallet, a watch-only account is created automatically.
 
 ---
 
+### `resolve_alias`
+
+**Description**: Resolves a case-insensitive alias to its Ethereum address.
+Local-only; no ENS or external lookups. Returns an EIP-55 checksummed address.
+
+**Parameters**:
+- `alias` (string): The alias to resolve (case-insensitive).
+
+**Example Request**:
+```json
+{"id":8,"method":"call_tool","params":{"name":"resolve_alias","arguments":{"alias":"alice"}}}
+```
+
+**Example Response**:
+```json
+{"id":8,"result":{"type":"structured","content":{"address":"0x..."}}}
+```
+
+On not found, returns an MCP error indicating the alias is not found.
+
+---
+
 ### `import_private_key`
 
 **Description**: Imports a private key to create or upgrade an account.

@@ -44,10 +44,10 @@
   - [x] 5.2 Scenario: using LLM agent, set an alias, then ask about of alias's address, and expect success
   - [x] 5.3 Scenario: use unknown alias and assert a friendly error is returned
 
-- [ ] 6.0 Documentation updates for both crates
-  - [ ] 6.1 Update `mcp-wallet/README.md` with the new `resolve_alias` tool (params, output)
-  - [ ] 6.2 Update `repl/README.md` to note aliases are accepted transparently for address fields
-  - [ ] 6.3 Mention case-insensitive behavior and out-of-scope items (no ENS/caching/security)
+- [x] 6.0 Documentation updates for both crates
+  - [x] 6.1 Update `mcp-wallet/README.md` with the new `resolve_alias` tool (params, output)
+  - [x] 6.2 Update `repl/README.md` to note aliases are accepted transparently for address fields
+  - [x] 6.3 Mention case-insensitive behavior and out-of-scope items (no ENS/caching/security)
 
 ## Associated PRD
 

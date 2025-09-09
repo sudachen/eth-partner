@@ -13,7 +13,8 @@ use rmcp::service::RunningService;
 
 // NOTE: Sub-tasks 5.2 and 5.3 add concrete scenarios using this setup.
 
-async fn setup_wallet_server_with_anvil() -> Result<(RunningService<rmcp::service::RoleClient, ()>, AnvilHandle)> {
+async fn setup_wallet_server_with_anvil(
+) -> Result<(RunningService<rmcp::service::RoleClient, ()>, AnvilHandle)> {
     // Start anvil and set env for ETH RPC
     let handle = AnvilHandle::spawn_and_wait().await?;
 
@@ -59,12 +60,17 @@ async fn e2e_alias_resolution_not_found() -> Result<()> {
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("does_not_exist"));
     let res = client
-        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .call_tool(CallToolRequestParam {
+            name: "resolve_alias".into(),
+            arguments: Some(args),
+        })
         .await;
     assert!(res.is_err(), "expected error when alias is not found");
 
     // Shutdown
-    if let Ok(c) = res { let _ = c; } // silence unused in success path (shouldn't happen)
+    if let Ok(c) = res {
+        let _ = c;
+    } // silence unused in success path (shouldn't happen)
     client.cancel().await.ok();
     handle.stop().await.ok();
 
@@ -96,7 +102,10 @@ async fn e2e_alias_resolution_success() -> Result<()> {
             arguments: Some(args),
         })
         .await?;
-    let r1_addr = r1.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let r1_addr = r1.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     let mut args = Map::new();
     args.insert("alias".to_string(), json!("ALICE"));
@@ -106,7 +115,10 @@ async fn e2e_alias_resolution_success() -> Result<()> {
             arguments: Some(args),
         })
         .await?;
-    let r2_addr = r2.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+    let r2_addr = r2.structured_content.unwrap()["address"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     assert_eq!(r1_addr, r2_addr);
     assert_eq!(r1_addr, address);
