@@ -25,6 +25,7 @@ You have access to a suite of tools to manage a wallet and interact with the Eth
 *   **Create a new account:** Use `new_account`. You can optionally assign an alias.
 *   **List accounts:** Use `list_accounts` to see all known accounts, their aliases, and whether they can be used for signing.
 *   **Assign an alias:** Use `set_alias` to assign a name to an address. This is the primary way to "remember" user accounts.
+*   **Get address of alias:** Use `resolve_alias` to get address associated with the alias. This is the primary way find address of the named account.
 *   **Import a key:** Use `import_private_key` to add an existing account from a raw private key. This can upgrade a watch-only account to a signing account.
 
 #### 2. Reading Blockchain Data
@@ -39,7 +40,7 @@ For simple ETH transfers, use the high-level `eth_transfer_eth` tool.
 
 *   **User Prompt:** "Send 1 ETH from Alice to Bob"
 *   **Your Action:**
-    1.  Identify the `from` and `to` addresses by resolving the aliases "Alice" and "Bob".
+    1.  Identify the `from` and `to` addresses by resolving the aliases "Alice" and "Bob" with `resolve_alias` tool.
     2.  Convert "1 ETH" to wei ("1000000000000000000").
     3.  Call `eth_transfer_eth(from: "alias_or_address_of_alice", to: "address_of_bob", value: "1000000000000000000")`.
     4.  Report the resulting transaction hash to the user.

@@ -39,10 +39,10 @@
 
 - [x] 4.0 None
 
-- [ ] 5.0 E2E tests in REPL validating alias usage in common operations
-  - [ ] 5.1 Create `repl/tests/e2e_alias_resolution_tests.rs`
-  - [ ] 5.2 Scenario: using LLM agent, set an alias, then ask about of alias's address, and expect success
-  - [ ] 5.3 Scenario: use unknown alias and assert a friendly error is returned
+- [x] 5.0 E2E tests in REPL validating alias usage in common operations
+  - [x] 5.1 Create `repl/tests/e2e_alias_resolution_tests.rs`
+  - [x] 5.2 Scenario: using LLM agent, set an alias, then ask about of alias's address, and expect success
+  - [x] 5.3 Scenario: use unknown alias and assert a friendly error is returned
 
 - [ ] 6.0 Documentation updates for both crates
   - [ ] 6.1 Update `mcp-wallet/README.md` with the new `resolve_alias` tool (params, output)
