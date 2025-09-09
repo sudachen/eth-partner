@@ -6,6 +6,7 @@ use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet, 
 use rmcp::ServiceExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing_subscriber::{fmt, EnvFilter};
 
 /// Command-line arguments for the MCP Wallet Server.
 #[derive(Parser, Debug)]
@@ -18,10 +19,25 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logger to write to stderr
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .target(env_logger::Target::Stderr)
-        .init();
+    // Initialize logging to write to ./eth-partner-log.txt by default.
+    // Forward `log` macros into `tracing` and set a global subscriber with
+    // EnvFilter that respects RUST_LOG, defaulting to "info".
+    let _ = tracing_log::LogTracer::init();
+
+    let file_appender = tracing_appender::rolling::never(".", "eth-partner-log.txt");
+    let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+    // Keep guard alive for process lifetime.
+    let _guard: &'static _ = Box::leak(Box::new(guard));
+
+    let subscriber = fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .with_target(false)
+        .with_writer(non_blocking)
+        .finish();
+
+    let _ = tracing::subscriber::set_global_default(subscriber);
 
     // Parse command-line arguments
     let args = Args::parse();

@@ -25,17 +25,23 @@ use tracing_subscriber::{fmt, EnvFilter};
 pub async fn run_repl() -> Result<()> {
     dotenvy::dotenv().ok();
 
-    // Initialize logging (default to info if RUST_LOG not set)
-    if tracing::subscriber::set_global_default(
-        fmt()
-            .with_env_filter(
-                EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-            )
-            .with_target(false)
-            .finish(),
-    )
-    .is_err()
-    {
+    // Initialize logging (default to info if RUST_LOG not set) to file
+    // eth-partner-log.txt in the current working directory. Use a non-blocking
+    // appender and keep the guard alive for the process lifetime.
+    let file_appender = tracing_appender::rolling::never(".", "eth-partner-log.txt");
+    let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+    // Leak the guard so it lives for the entire process; acceptable for a CLI/REPL.
+    let _guard: &'static _ = Box::leak(Box::new(guard));
+
+    let subscriber = fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .with_target(false)
+        .with_writer(non_blocking)
+        .finish();
+
+    if tracing::subscriber::set_global_default(subscriber).is_err() {
         // If already set by tests or another init, ignore.
     }
 

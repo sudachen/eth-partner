@@ -100,6 +100,24 @@ cargo run -p repl
 
 This will start the interactive REPL, where you can enter commands or prompts for the AI assistant.
 
+## Logging
+
+By default, the REPL writes logs to `./eth-partner-log.txt`. Control log levels and
+filters via the `RUST_LOG` environment variable (defaults to `info` when not set).
+
+Examples:
+
+```bash
+# default (info-level) logs written to ./eth-partner-log.txt
+cargo run -p repl
+
+# enable debug logs for all modules
+RUST_LOG=debug cargo run -p repl
+
+# fine-grained filters (example)
+RUST_LOG=repl=debug,mcp_wallet=info cargo run -p repl
+```
+
 ### Commands
 
 - `/help`: Displays a list of available commands.

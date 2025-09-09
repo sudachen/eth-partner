@@ -73,6 +73,26 @@ above. The agent will register available tools (wallet, web search, etc.) based
 on your environment.
 
 
+## Logging
+
+By default, both `repl` and `mcp-wallet` write logs to a file named
+`eth-partner-log.txt` in the current working directory. The log level and
+filters can be controlled with the standard `RUST_LOG` environment variable.
+If `RUST_LOG` is not set, the default level is `info`.
+
+Examples:
+
+```bash
+# default (info-level) logs written to ./eth-partner-log.txt
+cargo run -p repl
+
+# enable debug logs for all modules
+RUST_LOG=debug cargo run -p repl
+
+# fine-grained filters (example)
+RUST_LOG=repl=debug,mcp_wallet=info cargo run -p repl
+```
+
 ## Workspace layout
 
 - `Cargo.toml` — workspace definition for all crates

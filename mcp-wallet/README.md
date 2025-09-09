@@ -40,6 +40,24 @@ cargo run
 
 The server will start and listen for `rmcp` messages on standard input and send responses to standard output.
 
+## Logging
+
+By default, `mcp-wallet` writes logs to `./eth-partner-log.txt`. Control log levels and
+filters via the `RUST_LOG` environment variable (defaults to `info` when not set).
+
+Examples:
+
+```bash
+# default (info-level) logs written to ./eth-partner-log.txt
+cargo run -p mcp-wallet -- --help
+
+# enable debug logs for all modules
+RUST_LOG=debug cargo run -p mcp-wallet -- --help
+
+# fine-grained filters (example)
+RUST_LOG=repl=debug,mcp_wallet=info cargo run -p mcp-wallet -- --help
+```
+
 ### Wallet File
 
 By default, the wallet data is stored in `~/.mcp-wallet.json`. If the file does not exist, a new one will be created automatically when the server first needs to save data.

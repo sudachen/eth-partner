@@ -19,6 +19,7 @@ tokio = { version = "1.38.1", features = ["sync", "macros", "rt-multi-thread"] }
 mcp-wallet = { path = "../mcp-wallet" }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
 rmcp = "0.6.3"
 
 [dev-dependencies]
