@@ -27,7 +27,6 @@ async-trait = "0.1.80"
 clap = { version = "4.5.4", features = ["derive"] }
 dirs = "5.0"
 dotenv = "0.15.0"
-env_logger = "0.11.3"
 ethers = { version = "2.0", features = ["legacy"], default-features = false }
 hex = "0.4"
 log = "0.4.21"
