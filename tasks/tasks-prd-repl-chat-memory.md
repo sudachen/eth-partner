@@ -17,12 +17,12 @@
   - [x] 1.1 In `repl/src/agent.rs`, define a public struct `ChatMessage` that can be serialized, with `role` (String) and `content` (String) fields.
   - [x] 1.2 In `repl/src/agent.rs`, add a `history: Vec<ChatMessage>` field to the `ReplAgent` struct.
 
-- [ ] 2.0 Update the main REPL loop to store the conversation history.
+- [x] 2.0 Update the main REPL loop to store the conversation history.
   - [x] 2.1 In `main.rs`, inside `run_repl`, pass a mutable reference of the agent's history to the loop.
   - [x] 2.2 In `main.rs`, after getting a line from the user, add the user's prompt to the history as a `ChatMessage`.
   - [x] 2.3 In `main.rs`, after getting a response from the agent, add the assistant's response to the history.
 
-- [ ] 3.0 Implement the `/show_history` and `/clear_history` user commands.
+- [x] 3.0 Implement the `/show_history` and `/clear_history` user commands.
   - [x] 3.1 In `main.rs`, modify the `handle_command` function to accept the history as a mutable argument.
     - Note: Implemented in `repl/src/lib.rs` as `handle_command(&str, &mut Vec<ChatMessage>)` to match the current architecture.
   - [x] 3.2 In `handle_command`, add a match arm for `/show_history` that iterates through the history and prints it to the console.
