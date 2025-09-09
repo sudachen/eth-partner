@@ -154,10 +154,8 @@ pub fn load_from_path(path: &Path) -> Result<Config> {
     let config_content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read config file at {:?}", path))?;
 
-    let mut config: Config =
+    let config: Config =
         serde_json::from_str(&config_content).with_context(|| "Failed to parse config file")?;
-    // Apply environment variable defaults without overwriting explicit config values.
-    apply_env_defaults(&mut config);
     Ok(config)
 }
 

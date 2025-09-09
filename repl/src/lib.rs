@@ -101,7 +101,7 @@ pub async fn run_repl() -> Result<()> {
         info!("Gemini client initialized");
 
         let mut agent_builder = client.agent("gemini-1.5-flash-latest").preamble(
-            "You are a helpful AI assistant. Be concise and clear. You have access to a set of tools to help you answer questions.",
+            include_str!("../../system-prompt.md"),
         );
 
         let generation_config = config.llm.generation_config.unwrap_or_else(|| {
@@ -161,9 +161,9 @@ pub async fn run_repl() -> Result<()> {
 
     // --- REPL Loop ---
     let mut rl = Editor::<(), DefaultHistory>::new().context("Failed to create REPL editor")?;
-    if rl.load_history("history.txt").is_err() {
-        println!("No previous history.");
-    }
+    //if rl.load_history("history.txt").is_err() {
+    //    println!("No previous history.");
+    //}
 
     loop {
         let readline = rl.readline(">> ");
