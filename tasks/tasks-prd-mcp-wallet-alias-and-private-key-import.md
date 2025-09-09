@@ -25,24 +25,24 @@
   - [x] 1.4 Normalize/validate input address and store as `Address` (binary) consistently
   - [x] 1.5 Persist changes and ensure file format remains backward compatible
 
-- [ ] 2.0 Implement private key import tool and wallet upgrade path
-  - [ ] 2.1 Add MCP tool `import_private_key { private_key }` (accept 0x or raw hex)
-  - [ ] 2.2 Validate private key length/format (32-byte secp256k1, non-zero)
-  - [ ] 2.3 Derive address; if absent, create signing account (no alias changes)
-  - [ ] 2.4 If address exists as watch-only, upgrade to signing by attaching key
-  - [ ] 2.5 If signing account exists, follow current duplicate behavior (no change)
-  - [ ] 2.6 Ensure storage model and error responses remain unchanged
+- [x] 2.0 Implement private key import tool and wallet upgrade path
+  - [x] 2.1 Add MCP tool `import_private_key { private_key }` (accept 0x or raw hex)
+  - [x] 2.2 Validate private key length/format (32-byte secp256k1, non-zero)
+  - [x] 2.3 Derive address; if absent, create signing account (no alias changes)
+  - [x] 2.4 If address exists as watch-only, upgrade to signing by attaching key
+  - [x] 2.5 If signing account exists, follow current duplicate behavior (no change)
+  - [x] 2.6 Ensure storage model and error responses remain unchanged
 
-- [ ] 3.0 Validation and normalization for addresses and keys
-  - [ ] 3.1 Validate addresses via `ethers::types::Address::from_str` and checksum when returning as string
-  - [ ] 3.2 Add helper for private key normalization (strip 0x, lowercase, length check)
-  - [ ] 3.3 Add minimal error types/messages reusing existing `WalletError` patterns
+- [x] 3.0 Validation and normalization for addresses and keys
+  - [x] 3.1 Validate addresses via `ethers::types::Address::from_str` and checksum when returning as string
+  - [x] 3.2 Add helper for private key normalization (strip 0x, lowercase, length check)
+  - [x] 3.3 Add minimal error types/messages reusing existing `WalletError` patterns
 
-- [ ] 4.0 Wire MCP endpoints and schema updates (tools manifest)
-  - [ ] 4.1 Add `import_private_key` handler in `service/mod.rs` with schema params
-  - [ ] 4.2 Extend `set_alias` handler to auto-create watch-only accounts
-  - [ ] 4.3 Ensure `list_accounts` reflects watch-only vs signing state in response
-  - [ ] 4.4 Update server info/instructions minimally if needed
+- [x] 4.0 Wire MCP endpoints and schema updates (tools manifest)
+  - [x] 4.1 Add `import_private_key` handler in `service/mod.rs` with schema params
+  - [x] 4.2 Extend `set_alias` handler to auto-create watch-only accounts
+  - [x] 4.3 Ensure `list_accounts` reflects watch-only vs signing state in response
+  - [x] 4.4 Update server info/instructions minimally if needed
 
 - [ ] 5.0 Add unit tests for wallet logic (alias + import scenarios)
   - [ ] 5.1 Aliasing an unknown address creates a watch-only account

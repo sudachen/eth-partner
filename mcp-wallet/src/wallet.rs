@@ -96,6 +96,24 @@ impl Wallet {
         let wallet = private_key
             .parse::<LocalWallet>()
             .map_err(|e| WalletError::InvalidPrivateKey(e.to_string()))?;
+
+        let address = wallet.address();
+
+        if let Some(account) = self.accounts.get_mut(&address) {
+            // Account exists
+            if account.private_key.is_none() {
+                // Upgrade watch-only to signing account
+                let pk_hex = hex::encode(wallet.signer().to_bytes());
+                account.private_key = Some(pk_hex);
+                self.mark_dirty();
+                return Ok(address);
+            } else {
+                // Already a signing account; keep existing behavior
+                return Err(WalletError::AccountAlreadyExists(address));
+            }
+        }
+
+        // New account path
         self.add_account(wallet, alias)
     }
 

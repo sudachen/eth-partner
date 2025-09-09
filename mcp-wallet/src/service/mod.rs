@@ -16,6 +16,27 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
+/// Normalizes a private key string.
+///
+/// - Trims whitespace
+/// - Strips optional `0x` prefix
+/// - Validates it is exactly 64 hex chars and not all zeros
+/// - Returns lowercase hex string on success
+fn normalize_private_key_hex(input: &str) -> Option<String> {
+    let pk = input.trim();
+    let normalized = pk.strip_prefix("0x").unwrap_or(pk);
+    if normalized.len() != 64 {
+        return None;
+    }
+    if !normalized.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    if !normalized.chars().any(|c| c != '0') {
+        return None;
+    }
+    Some(normalized.to_ascii_lowercase())
+}
+
 // --- Tool Parameter Structs ---
 
 /// Parameters for the `new_account` tool.
@@ -32,6 +53,13 @@ struct SetAliasParams {
     address: String,
     /// The alias to set for the address.
     alias: String,
+}
+
+/// Parameters for the `import_private_key` tool.
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+struct ImportPrivateKeyParams {
+    /// The private key in hex format (0x-prefixed or raw 64 hex chars).
+    private_key: String,
 }
 
 /// Parameters for the `create_tx` tool.
@@ -182,7 +210,12 @@ impl WalletHandler {
         let json_accounts: Vec<_> = accounts
             .into_iter()
             .map(|(address, account)| {
-                json!({ "address": to_checksum(&address, None), "nonce": account.nonce, "aliases": account.aliases })
+                json!({
+                    "address": to_checksum(&address, None),
+                    "nonce": account.nonce,
+                    "aliases": account.aliases,
+                    "is_signing": account.private_key.is_some()
+                })
             })
             .collect();
         let result = serde_json::to_value(json_accounts).map_err(to_internal_error)?;
@@ -202,6 +235,23 @@ impl WalletHandler {
             .add_alias(address, params.0.alias.clone())
             .map_err(to_internal_error)?;
         let result = Value::Null;
+        Ok(CallToolResult::structured(result))
+    }
+
+    /// Imports a private key, creating or upgrading an account as needed.
+    #[tool(description = "Imports a private key, creating or upgrading an account as needed.")]
+    async fn import_private_key(
+        &self,
+        params: Parameters<ImportPrivateKeyParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let mut wallet = self.wallet.lock().await;
+        let normalized = normalize_private_key_hex(&params.0.private_key).ok_or_else(|| {
+            to_invalid_params_error("Invalid private key format (expect 32-byte hex)".to_string())
+        })?;
+        let address = wallet
+            .import_private_key(&normalized, "")
+            .map_err(to_internal_error)?;
+        let result = json!({ "address": to_checksum(&address, None) });
         Ok(CallToolResult::structured(result))
     }
 
