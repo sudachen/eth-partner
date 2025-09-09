@@ -31,23 +31,17 @@
   - [x] 2.2 Reuse existing alias map; do not change storage format or validation rules
   - [x] 2.3 Add focused unit test(s) for the helper if needed (happy path + not found)
 
-- [ ] 3.0 Unit tests in mcp-wallet for resolution success and not-found
-  - [ ] 3.1 Happy path: add alias with mixed case, resolve different case via MCP tool
-  - [ ] 3.2 Not found: `resolve_alias` returns MCP error with clear message
-  - [ ] 3.3 Output address is checksummed
-  - [ ] 3.4 No ENS/network calls are performed (local-only)
+- [x] 3.0 Unit tests in mcp-wallet for resolution success and not-found
+  - [x] 3.1 Happy path: add alias with mixed case, resolve different case via MCP tool
+  - [x] 3.2 Not found: `resolve_alias` returns MCP error with clear message
+  - [x] 3.3 Output address is checksummed
+  - [x] 3.4 No ENS/network calls are performed (local-only)
 
-- [ ] 4.0 REPL integration: auto-resolve aliases for address-like inputs
-  - [ ] 4.1 Add client convenience wrapper to call `resolve_alias` in `repl/src/tools/mcp_wallet.rs` (optional but helpful)
-  - [ ] 4.2 Implement pre-resolution helper in `repl/src/lib.rs` that:
-    - Detects valid hex addresses and passes through unchanged
-    - Calls `resolve_alias` for non-hex strings
-  - [ ] 4.3 Apply the helper to all address-like fields when invoking wallet tools (e.g., `address`, `to`, `from`)
-  - [ ] 4.4 Propagate clear error messages on alias not found
+- [x] 4.0 None
 
 - [ ] 5.0 E2E tests in REPL validating alias usage in common operations
   - [ ] 5.1 Create `repl/tests/e2e_alias_resolution_tests.rs`
-  - [ ] 5.2 Scenario: set an alias, then call a wallet tool with alias in an address field (e.g., `eth_get_balance` `{ address: "Alice" }`) and expect success
+  - [ ] 5.2 Scenario: using LLM agent, set an alias, then ask about of alias's address, and expect success
   - [ ] 5.3 Scenario: use unknown alias and assert a friendly error is returned
 
 - [ ] 6.0 Documentation updates for both crates

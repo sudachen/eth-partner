@@ -1,6 +1,7 @@
 //! Integration tests for the fully compliant MCP Wallet Server.
 
 use mcp_wallet::{eth_client::EthClient, service::WalletHandler, wallet::Wallet};
+use ethers::utils::to_checksum;
 use rmcp::{model::CallToolRequestParam, serve_client, service::ServiceExt};
 use serde_json::{json, Map, Value};
 use std::sync::Arc;
@@ -124,6 +125,140 @@ async fn test_mcp_client_workflow() {
     assert_eq!(accounts_after[0]["nonce"], 1);
 
     // 8. Shutdown
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn test_resolve_alias_local_only_no_network() {
+    // Use a non-routable endpoint for EthClient to ensure no network calls are needed.
+    let (client_stream, server_stream) = duplex(1024);
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:0").unwrap());
+
+    let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet, server_eth_client)
+            .serve(server_stream)
+            .await
+            .unwrap();
+        server.waiting().await.unwrap();
+    });
+
+    let client = serve_client((), client_stream).await.unwrap();
+
+    // Create a new account and alias without touching the network
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("NoNetAlias"));
+    let res = client
+        .call_tool(CallToolRequestParam { name: "new_account".into(), arguments: Some(args) })
+        .await
+        .expect("new_account should succeed");
+    let _addr = res.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+
+    // Resolve should succeed even though EthClient endpoint is non-routable
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("nonetalias"));
+    let resolved = client
+        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .await
+        .expect("resolve_alias should succeed locally");
+    let content = resolved.structured_content.unwrap();
+    let r = content["address"].as_str().unwrap().to_string();
+    assert!(r.starts_with("0x"));
+
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn test_resolve_alias_not_found() {
+    let (client_stream, server_stream) = duplex(1024);
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
+
+    let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet, server_eth_client)
+            .serve(server_stream)
+            .await
+            .unwrap();
+        server.waiting().await.unwrap();
+    });
+
+    let client = serve_client((), client_stream).await.unwrap();
+
+    // Try to resolve an unknown alias
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("nope"));
+    let res = client
+        .call_tool(CallToolRequestParam {
+            name: "resolve_alias".into(),
+            arguments: Some(args),
+        })
+        .await;
+
+    assert!(res.is_err(), "expected error for unknown alias");
+
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn test_resolve_alias_success() {
+    let (client_stream, server_stream) = duplex(1024);
+    let wallet = Arc::new(Mutex::new(Wallet::new()));
+    let eth_client = Arc::new(EthClient::new("http://127.0.0.1:8545").unwrap());
+
+    let server_wallet = wallet.clone();
+    let server_eth_client = eth_client.clone();
+    tokio::spawn(async move {
+        let server = WalletHandler::new(server_wallet, server_eth_client)
+            .serve(server_stream)
+            .await
+            .unwrap();
+        server.waiting().await.unwrap();
+    });
+
+    let client = serve_client((), client_stream).await.unwrap();
+
+    // Create a new account with alias "Alice" (mixed case on purpose)
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("AliCe"));
+    let res = client
+        .call_tool(CallToolRequestParam {
+            name: "new_account".into(),
+            arguments: Some(args),
+        })
+        .await
+        .expect("new_account should succeed");
+    let addr = res.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+
+    // Resolve with different casing
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("alice"));
+    let resolved1 = client
+        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .await
+        .expect("resolve_alias should succeed");
+    let r1 = resolved1.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+
+    let mut args = Map::new();
+    args.insert("alias".to_string(), json!("ALICE"));
+    let resolved2 = client
+        .call_tool(CallToolRequestParam { name: "resolve_alias".into(), arguments: Some(args) })
+        .await
+        .expect("resolve_alias should succeed");
+    let r2 = resolved2.structured_content.unwrap()["address"].as_str().unwrap().to_string();
+
+    // The addresses should match and be in checksum format
+    assert_eq!(r1, r2);
+    // to_checksum requires Address type; parse hex without checksum (strip 0x, parse) not needed
+    // Just ensure returned addr equals checksummed variant of itself
+    let addr_no_prefix = &addr[2..];
+    let addr_bytes = ethers::types::Address::from_slice(&hex::decode(addr_no_prefix).unwrap());
+    let expected = to_checksum(&addr_bytes, None);
+    assert_eq!(r1, expected);
+
     client.cancel().await.unwrap();
 }
 
