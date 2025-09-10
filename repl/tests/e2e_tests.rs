@@ -33,17 +33,15 @@ async fn test_e2e_gemini_prompt() -> Result<()> {
 
     // Initialize a real agent with the Gemini client
     let client = gemini::Client::new(&api_key);
-    let agent_builder = client
-        .agent("gemini-1.5-flash-latest")
-        .additional_params(json!({
-            "generationConfig": {
-                "temperature": 0.9,
-                "topK": 1,
-                "topP": 1,
-                "maxOutputTokens": 2048,
-                "stopSequences": []
-            }
-        }));
+    let agent_builder = client.agent("gemini-2.0-flash").additional_params(json!({
+        "generationConfig": {
+            "temperature": 0.9,
+            "topK": 1,
+            "topP": 1,
+            "maxOutputTokens": 2048,
+            "stopSequences": []
+        }
+    }));
     let mut agent = Some(ReplAgent::new(agent_builder));
 
     // 1. Send the 'Say Hi' prompt

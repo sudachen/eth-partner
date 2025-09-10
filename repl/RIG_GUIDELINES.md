@@ -82,7 +82,7 @@ use serde_json::json;
 
 // ...
 
-let agent_builder = client.agent("gemini-1.5-flash-latest").additional_params(json!({
+let agent_builder = client.agent("gemini-2.0-flash").additional_params(json!({
     "generationConfig": {
         "temperature": 0.9,
         "topK": 1,

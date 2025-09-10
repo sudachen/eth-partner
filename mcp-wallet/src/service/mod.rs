@@ -72,7 +72,8 @@ struct CreateTxParams {
     /// The amount of ETH to send.
     value: String,
     /// The chain ID for the transaction.
-    chain_id: u64,
+    #[serde(alias = "chain", alias = "chainId")]
+    chain_id: Option<u64>,
     /// The gas limit for the transaction.
     gas: Option<u64>,
     /// The maximum fee per gas for the transaction.
@@ -118,17 +119,52 @@ struct GetTxReceiptParams {
     transaction_hash: String,
 }
 
+/// Flexible amount type that accepts string or numeric inputs.
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+#[serde(untagged)]
+enum EthAmount {
+    /// String like "1.0" or "1000000000000000000"
+    Str(String),
+    /// Floating value like 1.0
+    Float(f64),
+    /// Integer value like 1
+    Int(u64),
+}
+
+/// Flexible wei amount type that accepts string or integer inputs.
+#[derive(Deserialize, Debug, schemars::JsonSchema)]
+#[serde(untagged)]
+enum WeiAmount {
+    /// Decimal string of wei, e.g. "1000000000000000000"
+    Str(String),
+    /// Integer wei amount
+    Int(u128),
+}
+
 /// Parameters for the `eth_transferEth` tool.
 #[derive(Deserialize, Debug, schemars::JsonSchema)]
 struct TransferEthParams {
     /// The identifier (address or alias) of the account to send from.
+    /// Aliases: sender, from_alias, source
+    #[serde(alias = "sender", alias = "from_alias", alias = "source")]
     from: String,
-    /// The recipient's Ethereum address.
+    /// The recipient (address or alias).
+    /// Aliases: recipient, to_alias, dest
+    #[serde(alias = "recipient", alias = "to_alias", alias = "dest")]
     to: String,
-    /// The amount of ETH to send.
-    value_eth: f64,
+    /// Amount in WEI (preferred). Accepts decimal string or integer.
+    /// Aliases: value, amount, wei
+    #[serde(alias = "value", alias = "amount", alias = "wei")]
+    value_wei: Option<WeiAmount>,
+    /// Convenience: amount in ETH as string/float/int. If provided and
+    /// `value_wei` is absent, it will be converted to wei.
+    /// Alias: eth
+    #[serde(alias = "eth")]
+    value_eth: Option<EthAmount>,
     /// The chain ID for the transaction.
-    chain_id: u64,
+    /// Aliases: chain, chainId
+    #[serde(alias = "chain", alias = "chainId")]
+    chain_id: Option<u64>,
 }
 
 /// Parameters for the `resolve_alias` tool.
@@ -256,14 +292,18 @@ impl WalletHandler {
             to_invalid_params_error("Invalid private key format (expect 32-byte hex)".to_string())
         })?;
         let address = wallet
-            .import_private_key(&normalized, "")
+            .import_private_key(&normalized)
             .map_err(to_internal_error)?;
         let result = json!({ "address": to_checksum(&address, None) });
         Ok(CallToolResult::structured(result))
     }
 
     /// Creates an EIP-1559 transaction request.
-    #[tool(description = "Creates an EIP-1559 transaction request.")]
+    #[tool(
+        description = "Creates an EIP-1559 transaction. Required: from, to, value, chain_id. \
+Use alias or address for from/to. Example: {from:'Alice',to:'Bob',value:'1000000000000000000',\
+chain_id:31337}"
+    )]
     async fn create_tx(
         &self,
         params: Parameters<CreateTxParams>,
@@ -282,8 +322,18 @@ impl WalletHandler {
         let value = U256::from_dec_str(&params.0.value)
             .map_err(|_| to_internal_error(format!("Invalid 'value': {}", params.0.value)))?;
 
+        // Resolve chain id (from param or network)
+        let chain_id = if let Some(id) = params.0.chain_id {
+            id
+        } else {
+            self.eth_client
+                .get_chain_id()
+                .await
+                .map_err(to_internal_error)?
+        };
+
         let mut builder = crate::transaction::TransactionBuilder::new()
-            .chain_id(params.0.chain_id)
+            .chain_id(chain_id)
             .to(to_address)
             .value(value)
             .nonce(from_account.nonce);
@@ -413,12 +463,53 @@ impl WalletHandler {
     }
 
     /// Creates, signs, and sends an ETH transfer transaction.
-    #[tool(description = "Creates, signs, and sends an ETH transfer transaction.")]
+    #[tool(
+        description = "Transfer ETH. Preferred: specify 'value_wei' (as string or integer). \
+Also accepts 'value_eth' (float/string) if 'value_wei' is not given. Chain ID is optional \
+and auto-resolved. Examples: {from:'Alice',to:'Bob',value_wei:'1000000000000000000'} or \
+{from:'Alice',to:'Bob',value_eth:1.0}"
+    )]
     async fn eth_transfer_eth(
         &self,
         params: Parameters<TransferEthParams>,
     ) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
+
+        // Resolve amount to wei. Prefer value_wei, fallback to value_eth.
+        let value_wei = if let Some(w) = params.0.value_wei {
+            match w {
+                WeiAmount::Str(s) => U256::from_dec_str(&s)
+                    .map_err(|_| to_invalid_params_error("Invalid 'value_wei'".to_string()))?,
+                WeiAmount::Int(i) => U256::from(i),
+            }
+        } else if let Some(value_eth) = params.0.value_eth {
+            match value_eth {
+                EthAmount::Str(s) => ethers::utils::parse_ether(s)
+                    .map_err(|e| to_invalid_params_error(e.to_string()))?,
+                EthAmount::Float(f) => {
+                    if !(f.is_finite() && f > 0.0) {
+                        return Err(to_invalid_params_error(
+                            "'value_eth' must be a positive number".to_string(),
+                        ));
+                    }
+                    ethers::utils::parse_ether(f)
+                        .map_err(|e| to_invalid_params_error(e.to_string()))?
+                }
+                EthAmount::Int(i) => {
+                    if i == 0 {
+                        return Err(to_invalid_params_error(
+                            "'value_eth' must be > 0".to_string(),
+                        ));
+                    }
+                    ethers::utils::parse_ether(i)
+                        .map_err(|e| to_invalid_params_error(e.to_string()))?
+                }
+            }
+        } else {
+            return Err(to_invalid_params_error(
+                "Missing amount: provide 'value_wei' (preferred) or 'value_eth'".to_string(),
+            ));
+        };
 
         // Support aliases for the `to` field (case-insensitive) before falling
         // back to strict hex parsing.
@@ -429,18 +520,27 @@ impl WalletHandler {
                 to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to))
             })?
         };
-        let value_wei = ethers::utils::parse_ether(params.0.value_eth)
-            .map_err(|e| to_invalid_params_error(e.to_string()))?;
+        // value_wei already parsed above
 
         // Create the transaction request
         let (from_account, _) = wallet
             .get_account(&params.0.from)
             .ok_or_else(|| to_internal_error(WalletError::SignerNotFound(params.0.from.clone())))?;
 
+        // Resolve chain id (from param or network)
+        let chain_id = if let Some(id) = params.0.chain_id {
+            id
+        } else {
+            self.eth_client
+                .get_chain_id()
+                .await
+                .map_err(to_internal_error)?
+        };
+
         let tx_request = crate::models::Eip1559TransactionRequest {
             to: Some(to_address),
             value: value_wei,
-            chain_id: params.0.chain_id,
+            chain_id,
             nonce: from_account.nonce.into(),
             ..Default::default()
         };

@@ -1,15 +1,16 @@
 use ethers::core::types::{Address, U256};
 use ethers::signers::{LocalWallet, Signer};
 use mcp_wallet::{error::WalletError, transaction::TransactionBuilder, wallet::Wallet};
+use std::str::FromStr;
 
 fn create_test_wallet() -> Wallet {
     let mut wallet = Wallet::new();
+    let addr = Address::from_str("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266").unwrap();
+    wallet.add_alias(addr, "testaccount".to_string()).unwrap();
     wallet
-        .import_private_key(
-            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-            "testaccount",
-        )
+        .import_private_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
         .unwrap();
+    //println!("{:?}",(&mut wallet).list_accounts());
     wallet
 }
 
@@ -42,7 +43,7 @@ fn test_import_upgrades_watch_only_to_signing() {
     let nonce_before = acc_before.nonce;
 
     // Import the matching private key; should upgrade
-    let returned_addr = wallet.import_private_key(pk, "").unwrap();
+    let returned_addr = wallet.import_private_key(pk).unwrap();
     assert_eq!(returned_addr, addr);
 
     // Verify upgraded to signing and nonce preserved

@@ -88,11 +88,11 @@ impl Wallet {
     /// Returns the address of the new account.
     pub fn create_account(&mut self, alias: &str) -> Result<Address> {
         let wallet = LocalWallet::new(&mut thread_rng());
-        self.add_account(wallet, alias)
+        self.add_account(wallet, Some(alias))
     }
 
     /// Imports an account from a private key string.
-    pub fn import_private_key(&mut self, private_key: &str, alias: &str) -> Result<Address> {
+    pub fn import_private_key(&mut self, private_key: &str) -> Result<Address> {
         let wallet = private_key
             .parse::<LocalWallet>()
             .map_err(|e| WalletError::InvalidPrivateKey(e.to_string()))?;
@@ -106,28 +106,26 @@ impl Wallet {
                 let pk_hex = hex::encode(wallet.signer().to_bytes());
                 account.private_key = Some(pk_hex);
                 self.mark_dirty();
-                return Ok(address);
-            } else {
-                // Already a signing account; keep existing behavior
-                return Err(WalletError::AccountAlreadyExists(address));
             }
+            return Ok(address);
         }
 
         // New account path
-        self.add_account(wallet, alias)
+        self.add_account(wallet, None)
     }
 
     /// Adds an account to the wallet.
-    fn add_account(&mut self, wallet: LocalWallet, alias: &str) -> Result<Address> {
+    fn add_account(&mut self, wallet: LocalWallet, alias: Option<&str>) -> Result<Address> {
         let address = wallet.address();
-        if self.accounts.contains_key(&address) {
+
+        /*if self.accounts.contains_key(&address) {
             return Err(WalletError::AccountAlreadyExists(address));
-        }
+        }*/
 
         let private_key = hex::encode(wallet.signer().to_bytes());
         let mut account = Account::new_with_private_key(private_key);
 
-        if !alias.is_empty() {
+        if let Some(alias) = alias {
             self.add_alias_to_account(&mut account, alias, address)?;
         }
 

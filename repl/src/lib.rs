@@ -107,13 +107,13 @@ pub async fn run_repl() -> Result<()> {
         info!("Gemini client initialized");
 
         let mut agent_builder = client
-            .agent("gemini-1.5-flash-latest")
+            .agent("gemini-2.0-flash")
             .preamble(include_str!("../../system-prompt.md"));
 
         let generation_config = config.llm.generation_config.unwrap_or_else(|| {
             println!("Using default generation config");
             GenerationConfig {
-                temperature: 0.9,
+                temperature: 0.2,
                 top_k: 1,
                 top_p: 1.0,
                 max_output_tokens: 2048,

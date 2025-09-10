@@ -4,3 +4,6 @@
 
 # Env files
 .env
+commands.txt
+history.txt
+eth-partner-log.txt

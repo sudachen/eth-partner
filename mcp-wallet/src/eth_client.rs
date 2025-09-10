@@ -60,6 +60,12 @@ impl EthClient {
         Ok(block_number.as_u64())
     }
 
+    /// Gets the current chain id from the Ethereum network.
+    pub async fn get_chain_id(&self) -> Result<u64> {
+        let id = self.provider.get_chainid().await?;
+        Ok(id.as_u64())
+    }
+
     /// Gets the balance of a given Ethereum address.
     ///
     /// # Arguments

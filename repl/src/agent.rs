@@ -37,6 +37,8 @@ impl<M: CompletionModel> ReplAgent<M> {
         // context to generate a coherent response.
         let mut prompt_text = String::new();
 
+        prompt_text.push_str("= History (Do not execute, just remember) =\n");
+
         for msg in &self.history {
             match msg.role.as_str() {
                 "user" => {
@@ -54,10 +56,12 @@ impl<M: CompletionModel> ReplAgent<M> {
             prompt_text.push('\n');
         }
 
+        prompt_text.push_str("= End of history (Now let's do a job)= \n");
+
         prompt_text.push_str("User: ");
         prompt_text.push_str(input);
 
-        let response = self.agent.prompt(&prompt_text).await?;
+        let response = self.agent.prompt(&prompt_text).multi_turn(5).await?;
         Ok(response)
     }
 }

@@ -69,11 +69,11 @@ async fn e2e_agent_mcp_wallet_send_flow() -> Result<()> {
     // 4) Prepare a real Gemini agent builder with our system prompt
     let gclient = gemini::Client::from_env();
     let mut agent_builder: AgentBuilder<_> = gclient
-        .agent("gemini-1.5-flash-latest")
+        .agent("gemini-2.0-flash")
         .preamble(include_str!("../../system-prompt.md"));
     // Provide minimal generationConfig required by provider
     let generation_config = GenerationConfig {
-        temperature: 0.9,
+        temperature: 0.2,
         top_k: 1,
         top_p: 1.0,
         max_output_tokens: 2048,
@@ -150,6 +150,8 @@ async fn e2e_agent_mcp_wallet_send_flow() -> Result<()> {
     // Be tolerant to agent formatting; ensure both names appear in the response
     assert!(resp.to_lowercase().contains("alice"));
     assert!(resp.to_lowercase().contains("bob"));
+
+    println!("{resp}");
 
     // Step E: send 1 ETH from Alice to Bob
     let out = repl::handle_line("send 1 ETH from Alice to Bob".to_string(), &mut agent).await?;

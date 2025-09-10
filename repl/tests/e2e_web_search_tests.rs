@@ -45,7 +45,7 @@ async fn test_e2e_web_search() -> Result<()> {
     // Initialize a real agent with the Gemini client and WebSearchTool
     let client = gemini::Client::new(&gemini_api_key);
     let agent_builder = client
-        .agent("gemini-1.5-flash-latest")
+        .agent("gemini-2.0-flash")
         .additional_params(json!({
             "generationConfig": {
                 "temperature": 0.2, // Lower temperature for more deterministic output
