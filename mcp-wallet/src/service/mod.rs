@@ -239,7 +239,7 @@ impl WalletHandler {
         let address = Address::from_str(&params.0.address)
             .map_err(|_| to_internal_error(format!("Invalid address: {}", params.0.address)))?;
         wallet
-            .add_alias(address, params.0.alias.clone())
+            .set_or_update_alias(address, params.0.alias.clone())
             .map_err(to_internal_error)?;
         let result = Value::Null;
         Ok(CallToolResult::structured(result))
@@ -272,8 +272,13 @@ impl WalletHandler {
         let (from_account, _) = wallet
             .get_account(&params.0.from)
             .ok_or_else(|| to_internal_error(WalletError::SignerNotFound(params.0.from.clone())))?;
-        let to_address = Address::from_str(&params.0.to)
-            .map_err(|_| to_internal_error(format!("Invalid 'to' address: {}", params.0.to)))?;
+        // Allow alias for `to` (case-insensitive); fallback to hex parsing
+        let to_address = if let Some(addr) = wallet.resolve_alias_case_insensitive(&params.0.to) {
+            addr
+        } else {
+            Address::from_str(&params.0.to)
+                .map_err(|_| to_internal_error(format!("Invalid 'to' address: {}", params.0.to)))?
+        };
         let value = U256::from_dec_str(&params.0.value)
             .map_err(|_| to_internal_error(format!("Invalid 'value': {}", params.0.value)))?;
 
@@ -415,9 +420,15 @@ impl WalletHandler {
     ) -> Result<CallToolResult, ErrorData> {
         let mut wallet = self.wallet.lock().await;
 
-        let to_address = Address::from_str(&params.0.to).map_err(|_| {
-            to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to))
-        })?;
+        // Support aliases for the `to` field (case-insensitive) before falling
+        // back to strict hex parsing.
+        let to_address = if let Some(addr) = wallet.resolve_alias_case_insensitive(&params.0.to) {
+            addr
+        } else {
+            Address::from_str(&params.0.to).map_err(|_| {
+                to_invalid_params_error(format!("Invalid 'to' address: {}", params.0.to))
+            })?
+        };
         let value_wei = ethers::utils::parse_ether(params.0.value_eth)
             .map_err(|e| to_invalid_params_error(e.to_string()))?;
 

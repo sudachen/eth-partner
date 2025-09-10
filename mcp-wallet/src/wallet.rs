@@ -162,6 +162,49 @@ impl Wallet {
         }
     }
 
+    /// Sets or updates an alias to point to the given address.
+    ///
+    /// Behavior:
+    /// - If alias does not exist, behaves like `add_alias`.
+    /// - If alias already maps to `address`, no-op.
+    /// - If alias maps to a different address, move the alias to `address` and
+    ///   update both accounts' alias lists accordingly.
+    pub fn set_or_update_alias(&mut self, address: Address, alias: String) -> Result<()> {
+        if !is_valid_alias(&alias) {
+            return Err(WalletError::InvalidAlias(alias));
+        }
+
+        match self.aliases.get(&alias).cloned() {
+            None => self.add_alias(address, alias),
+            Some(current) if current == address => Ok(()),
+            Some(old_addr) => {
+                // Ensure destination and source accounts exist
+                self.accounts
+                    .entry(address)
+                    .or_insert_with(Account::new_watch_only);
+                self.accounts
+                    .entry(old_addr)
+                    .or_insert_with(Account::new_watch_only);
+
+                // Remove alias from old account list
+                if let Some(old_acc) = self.accounts.get_mut(&old_addr) {
+                    old_acc.aliases.retain(|a| a != &alias);
+                }
+                // Add alias to new account list if missing
+                if let Some(new_acc) = self.accounts.get_mut(&address) {
+                    if !new_acc.aliases.iter().any(|a| a == &alias) {
+                        new_acc.aliases.push(alias.clone());
+                    }
+                }
+
+                // Update global map and mark dirty
+                self.aliases.insert(alias, address);
+                self.mark_dirty();
+                Ok(())
+            }
+        }
+    }
+
     /// Helper to add an alias to an account and the wallet's alias map.
     fn add_alias_to_account(
         &mut self,
