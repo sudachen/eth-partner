@@ -122,7 +122,7 @@ async fn e2e_alias_resolution_success() -> Result<()> {
 
     assert_eq!(r1_addr, r2_addr);
     assert_eq!(r1_addr, address);
-    
+
     // Shutdown
     client.cancel().await.ok();
     handle.stop().await.ok();
