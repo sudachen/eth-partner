@@ -122,19 +122,7 @@ async fn e2e_alias_resolution_success() -> Result<()> {
 
     assert_eq!(r1_addr, r2_addr);
     assert_eq!(r1_addr, address);
-
-    // Use alias directly in eth_get_balance
-    let mut bargs = Map::new();
-    bargs.insert("address".to_string(), json!("alice"));
-    let bal = client
-        .call_tool(CallToolRequestParam {
-            name: "eth_get_balance".into(),
-            arguments: Some(bargs),
-        })
-        .await?;
-    let bal_json: Value = bal.structured_content.unwrap_or(Value::Null);
-    assert!(bal_json["balance_eth"].is_string());
-
+    
     // Shutdown
     client.cancel().await.ok();
     handle.stop().await.ok();

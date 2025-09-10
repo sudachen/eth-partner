@@ -7,12 +7,14 @@ use tokio::process::{Child, Command};
 use tokio::time::sleep;
 
 /// Handle to a spawned Anvil process for tests.
+#[allow(dead_code)]
 pub struct AnvilHandle {
     pub url: String,
     pub chain_id: u64,
     child: Child,
 }
 
+#[allow(dead_code)]
 impl AnvilHandle {
     /// Spawn a local anvil instance on a random free port and wait until it's ready.
     pub async fn spawn_and_wait() -> Result<Self> {
